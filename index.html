@@ -28,8 +28,8 @@
     .form-group { margin-bottom: 20px; }
     label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; }
     .sub-label { font-size: 0.8rem; font-style: italic; color: var(--muted); margin-top: 4px; display: block; }
-    input, select { width: 100%; padding: 12px 14px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.95rem; outline: none; }
-    input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(16, 124, 65, 0.15); }
+    input { width: 100%; padding: 12px 14px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.95rem; outline: none; }
+    input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(16, 124, 65, 0.15); }
     
     .config-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px; }
     .config-card { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; text-align: center; }
@@ -91,7 +91,7 @@
     <p class="desc">
       Jumlahkan 2 angka yang tersusun vertikal dari <strong>bawah ke atas</strong>.<br>
       Ketikkan <strong>hanya digit satuan</strong> (contoh: 4 + 9 = 13, ketik <strong>3</strong>; 9 + 2 = 11, ketik <strong>1</strong>).<br>
-      Layar otomatis berpindah ke lajur berikutnya saat durasi waktu per lajur habis.
+      Layar otomatis berpindah ke lajur berikutnya setiap 15 detik.
     </p>
 
     <div class="config-grid">
@@ -118,14 +118,6 @@
       <label>Email Peserta <span style="color: #dc2626;">*</span></label>
       <input type="email" id="candidate-email" placeholder="xxx@domain.com" required>
       <span class="sub-label"><em>(contoh: xxx@blabla.com)</em></span>
-    </div>
-
-    <div class="form-group">
-      <label>Durasi Pengerjaan per Lajur</label>
-      <select id="timer-duration" onchange="updateDurationBadge()">
-        <option value="15" selected>15 Detik (Standar Resmi)</option>
-        <option value="60">60 Detik (Mode Uji Coba / Test Run)</option>
-      </select>
     </div>
 
     <button class="btn" onclick="startTest()">Mulai Pengerjaan</button>
@@ -209,7 +201,7 @@
 </div>
 
 <script>
-  // 50 LAJUR UTUH DARI FILE EXCEL (DIURUTKAN DARI BAWAH KE ATAS: INDEKS 0 = BARIS PALING BAWAH)
+  // 50 LAJUR DARI FILE EXCEL (DIURUTKAN DARI BAWAH KE ATAS: INDEKS 0 = BARIS PALING BAWAH / ROW 31)
   const KRAEPELIN_EXCEL_DATA = [
     [4, 9, 2, 7, 4, 6, 8, 9, 2, 9, 5, 6, 2, 2, 8, 1, 1, 2, 2, 9, 6, 6, 4, 7, 9, 7, 7, 2], // Lajur 1
     [3, 8, 1, 6, 1, 7, 5, 8, 6, 2, 4, 6, 5, 9, 2, 5, 3, 6, 3, 5, 9, 1, 7, 6, 9, 6, 5, 7], // Lajur 2
@@ -218,52 +210,51 @@
     [1, 3, 1, 6, 9, 9, 3, 2, 5, 8, 7, 3, 7, 2, 6, 7, 1, 4, 6, 4, 8, 7, 2, 1, 5, 2, 6, 3], // Lajur 5
     [7, 1, 7, 3, 7, 8, 5, 6, 2, 9, 6, 8, 6, 7, 8, 4, 7, 8, 3, 5, 9, 6, 8, 7, 1, 9, 8, 6], // Lajur 6
     [5, 7, 1, 6, 6, 4, 6, 9, 4, 5, 5, 3, 5, 9, 2, 7, 7, 8, 7, 9, 4, 4, 7, 2, 5, 8, 4, 5], // Lajur 7
-    [1, 1, 9, 7, 4, 6, 2, 5, 9, 3, 3, 5, 7, 4, 6, 2, 8, 9, 8, 5, 4, 5, 5, 5, 1, 8, 5, 5], // Lajur 8
-    [6, 1, 4, 4, 1, 7, 6, 3, 6, 1, 7, 7, 1, 5, 8, 6, 6, 7, 9, 7, 5, 3, 2, 2, 5, 6, 7, 7], // Lajur 9
-    [5, 3, 9, 1, 4, 8, 9, 7, 4, 9, 1, 1, 8, 7, 3, 7, 2, 5, 4, 3, 5, 4, 4, 6, 3, 8, 1, 9], // Lajur 10
+    [1, 1, 9, 7, 7, 4, 4, 2, 5, 3, 3, 6, 2, 6, 6, 8, 8, 7, 9, 4, 5, 1, 5, 1, 8, 8, 5, 5], // Lajur 8
+    [6, 1, 4, 4, 3, 1, 6, 9, 1, 7, 7, 5, 8, 2, 6, 7, 9, 1, 1, 4, 3, 2, 5, 2, 6, 5, 7, 7], // Lajur 9
+    [5, 3, 9, 1, 4, 7, 8, 6, 9, 4, 1, 3, 6, 3, 2, 7, 5, 3, 2, 5, 4, 5, 6, 4, 9, 9, 1, 9], // Lajur 10
     [4, 5, 5, 5, 3, 8, 9, 4, 8, 5, 8, 8, 4, 7, 1, 5, 4, 3, 9, 5, 4, 3, 4, 8, 3, 7, 9, 9], // Lajur 11
     [7, 9, 8, 6, 6, 2, 6, 3, 2, 7, 7, 9, 9, 3, 3, 2, 7, 8, 5, 5, 2, 1, 9, 3, 7, 6, 9, 4], // Lajur 12
-    [3, 1, 7, 8, 9, 4, 2, 7, 8, 3, 5, 6, 3, 2, 4, 6, 3, 8, 8, 9, 3, 5, 3, 8, 6, 3, 2, 4], // Lajur 13
-    [3, 5, 2, 7, 2, 2, 4, 3, 7, 7, 9, 4, 1, 1, 8, 6, 9, 2, 5, 8, 9, 9, 8, 9, 9, 2, 3, 3], // Lajur 14
-    [2, 1, 5, 5, 4, 4, 8, 5, 3, 1, 4, 9, 8, 8, 5, 9, 5, 5, 6, 3, 9, 9, 3, 5, 8, 9, 7, 4], // Lajur 15
-    [2, 7, 4, 2, 3, 8, 6, 6, 8, 8, 1, 4, 7, 4, 9, 5, 9, 6, 6, 3, 3, 3, 3, 8, 5, 1, 9, 5], // Lajur 16
-    [2, 8, 1, 3, 7, 9, 4, 4, 6, 2, 7, 9, 5, 3, 7, 7, 5, 6, 7, 7, 5, 3, 2, 3, 6, 6, 4, 7], // Lajur 17
-    [3, 4, 8, 7, 1, 4, 5, 9, 9, 6, 5, 4, 3, 5, 5, 9, 7, 5, 7, 3, 8, 3, 9, 9, 8, 1, 6, 8], // Lajur 18
-    [6, 7, 1, 4, 7, 5, 9, 4, 4, 9, 6, 3, 2, 2, 8, 4, 9, 7, 9, 1, 7, 4, 2, 7, 1, 1, 1, 2], // Lajur 19
-    [2, 7, 9, 4, 2, 4, 2, 5, 5, 5, 9, 1, 5, 1, 4, 5, 8, 7, 1, 4, 7, 8, 8, 1, 7, 7, 8, 6], // Lajur 20
-    [9, 4, 2, 9, 2, 2, 1, 7, 9, 6, 9, 4, 7, 4, 9, 3, 7, 9, 1, 4, 7, 5, 6, 1, 1, 4, 1, 9], // Lajur 21
-    [9, 4, 2, 9, 8, 2, 8, 6, 8, 7, 2, 4, 7, 6, 3, 3, 6, 9, 1, 7, 5, 5, 2, 6, 2, 1, 1, 9], // Lajur 22
-    [4, 4, 9, 1, 7, 4, 1, 9, 1, 6, 3, 1, 8, 7, 5, 7, 9, 9, 7, 9, 6, 6, 6, 2, 2, 9, 2, 5], // Lajur 23
-    [1, 2, 4, 2, 8, 3, 7, 6, 5, 5, 6, 5, 3, 3, 7, 3, 9, 5, 9, 4, 2, 9, 7, 4, 4, 5, 5, 9], // Lajur 24
-    [2, 7, 3, 1, 1, 1, 4, 4, 6, 9, 6, 9, 7, 5, 6, 3, 9, 7, 5, 2, 8, 1, 6, 2, 1, 2, 3, 3], // Lajur 25
-    [1, 8, 1, 6, 8, 3, 8, 9, 4, 7, 1, 7, 1, 7, 9, 2, 8, 2, 5, 6, 9, 7, 2, 9, 2, 2, 7, 2], // Lajur 26
-    [6, 7, 3, 7, 5, 6, 5, 4, 9, 5, 4, 5, 7, 1, 5, 9, 9, 3, 7, 9, 4, 6, 1, 7, 7, 2, 6, 1], // Lajur 27
-    [7, 5, 6, 3, 3, 2, 5, 8, 4, 8, 9, 7, 5, 7, 4, 7, 6, 6, 3, 6, 5, 2, 3, 8, 8, 1, 2, 3], // Lajur 28
-    [3, 3, 2, 2, 9, 2, 3, 5, 2, 4, 2, 5, 5, 3, 9, 6, 7, 8, 6, 5, 1, 4, 6, 7, 7, 6, 1, 8], // Lajur 29
-    [2, 9, 2, 3, 8, 2, 1, 3, 8, 2, 9, 6, 6, 5, 1, 7, 5, 4, 8, 7, 7, 5, 6, 6, 6, 6, 9, 5], // Lajur 30
-    [3, 8, 2, 3, 7, 9, 3, 8, 1, 6, 3, 9, 9, 3, 3, 1, 9, 2, 4, 1, 9, 3, 7, 7, 7, 2, 6, 6], // Lajur 31
-    [3, 7, 9, 1, 4, 2, 9, 4, 6, 7, 7, 3, 9, 9, 7, 1, 4, 8, 2, 8, 4, 1, 6, 6, 8, 6, 3, 9], // Lajur 32
-    [1, 4, 2, 6, 9, 3, 3, 8, 8, 6, 1, 7, 2, 8, 5, 4, 2, 5, 3, 7, 9, 7, 8, 6, 6, 1, 7, 3], // Lajur 33
-    [6, 9, 3, 8, 6, 9, 4, 5, 7, 3, 5, 1, 9, 4, 9, 6, 4, 2, 8, 3, 3, 8, 8, 6, 6, 7, 4, 8], // Lajur 34
-    [8, 6, 9, 1, 2, 6, 9, 9, 3, 9, 8, 5, 8, 6, 4, 9, 5, 7, 5, 2, 7, 8, 6, 1, 1, 9, 5, 3], // Lajur 35
-    [1, 2, 6, 1, 2, 3, 4, 3, 9, 6, 7, 6, 9, 2, 1, 7, 6, 5, 1, 9, 6, 5, 7, 7, 8, 8, 2, 4], // Lajur 36
-    [1, 2, 3, 4, 1, 3, 6, 9, 4, 2, 9, 9, 2, 7, 8, 4, 2, 5, 2, 5, 5, 8, 7, 5, 8, 3, 2, 4], // Lajur 37
-    [4, 1, 3, 9, 9, 2, 7, 4, 6, 5, 2, 4, 7, 4, 5, 2, 3, 8, 9, 5, 1, 2, 4, 4, 3, 7, 9, 1], // Lajur 38
-    [9, 9, 2, 7, 4, 3, 6, 6, 9, 6, 3, 5, 2, 5, 7, 4, 7, 9, 5, 5, 2, 9, 8, 5, 4, 4, 9, 7], // Lajur 39
-    [7, 4, 3, 2, 5, 7, 4, 3, 8, 9, 7, 3, 5, 3, 9, 5, 1, 2, 2, 1, 3, 6, 9, 8, 9, 7, 4, 3], // Lajur 40
-    [2, 5, 7, 1, 6, 8, 4, 3, 2, 1, 9, 2, 3, 7, 5, 8, 4, 9, 5, 2, 3, 7, 6, 8, 8, 4, 2, 4], // Lajur 41
-    [1, 6, 8, 6, 9, 1, 4, 6, 6, 3, 4, 9, 8, 5, 8, 5, 6, 4, 4, 3, 9, 7, 7, 9, 1, 5, 2, 1], // Lajur 42
-    [6, 9, 1, 4, 3, 3, 4, 8, 7, 6, 5, 4, 8, 8, 5, 7, 8, 3, 2, 8, 7, 2, 2, 7, 8, 8, 1, 2], // Lajur 43
-    [4, 3, 3, 4, 7, 2, 3, 8, 4, 6, 9, 5, 2, 5, 7, 1, 3, 3, 6, 7, 8, 8, 8, 7, 6, 6, 4, 7], // Lajur 44
-    [4, 7, 2, 1, 8, 4, 4, 2, 3, 4, 3, 9, 3, 8, 6, 2, 5, 3, 3, 2, 1, 8, 7, 6, 1, 7, 4, 7], // Lajur 45
-    [1, 8, 4, 7, 4, 2, 4, 9, 4, 9, 5, 3, 5, 4, 8, 3, 5, 3, 5, 6, 8, 2, 8, 1, 6, 5, 3, 1], // Lajur 46
-    [7, 4, 2, 1, 8, 1, 4, 1, 9, 6, 3, 8, 5, 6, 8, 5, 9, 3, 8, 5, 2, 4, 3, 7, 5, 7, 4, 8], // Lajur 47
-    [1, 8, 1, 1, 6, 2, 9, 5, 3, 7, 9, 5, 8, 2, 8, 7, 9, 5, 5, 8, 2, 6, 7, 5, 4, 4, 2, 7], // Lajur 48
+    [3, 1, 7, 8, 9, 4, 2, 5, 7, 3, 5, 4, 6, 2, 3, 6, 3, 8, 6, 8, 9, 5, 3, 8, 6, 3, 2, 4], // Lajur 13
+    [3, 5, 2, 7, 2, 2, 4, 8, 3, 3, 9, 9, 1, 1, 4, 6, 9, 2, 5, 5, 9, 5, 8, 9, 9, 2, 3, 3], // Lajur 14
+    [2, 1, 5, 5, 5, 4, 8, 6, 2, 1, 4, 9, 8, 8, 8, 5, 9, 5, 4, 5, 3, 8, 9, 3, 5, 9, 7, 4], // Lajur 15
+    [2, 7, 4, 2, 6, 3, 7, 6, 4, 8, 1, 4, 8, 7, 3, 9, 5, 2, 6, 6, 3, 9, 9, 3, 8, 1, 9, 5], // Lajur 16
+    [2, 8, 1, 3, 7, 1, 9, 4, 9, 2, 7, 9, 4, 5, 6, 7, 7, 6, 7, 6, 5, 5, 3, 2, 8, 6, 4, 7], // Lajur 17
+    [3, 4, 8, 3, 1, 7, 4, 5, 9, 6, 5, 4, 2, 3, 3, 5, 7, 5, 7, 3, 3, 8, 3, 9, 3, 1, 6, 8], // Lajur 18
+    [6, 7, 1, 7, 6, 4, 2, 9, 4, 6, 6, 3, 5, 2, 8, 4, 9, 1, 9, 1, 7, 9, 4, 2, 7, 1, 1, 2], // Lajur 19
+    [2, 7, 9, 5, 3, 4, 5, 5, 5, 9, 1, 6, 4, 1, 5, 8, 7, 7, 4, 5, 7, 8, 8, 1, 7, 4, 8, 6], // Lajur 20
+    [9, 4, 2, 9, 8, 2, 2, 1, 7, 1, 9, 4, 2, 7, 9, 3, 6, 9, 1, 7, 4, 7, 5, 6, 1, 2, 1, 9], // Lajur 21
+    [9, 4, 2, 9, 8, 2, 2, 1, 7, 1, 9, 4, 2, 7, 9, 3, 6, 9, 1, 7, 4, 7, 5, 6, 1, 2, 1, 9], // Lajur 22
+    [4, 4, 9, 1, 9, 1, 6, 8, 6, 2, 2, 1, 4, 4, 3, 2, 9, 6, 3, 8, 6, 2, 2, 2, 9, 9, 2, 5], // Lajur 23
+    [1, 2, 4, 7, 6, 9, 5, 1, 3, 8, 7, 6, 5, 7, 9, 7, 4, 2, 4, 1, 9, 1, 4, 8, 7, 4, 5, 9], // Lajur 24
+    [2, 7, 3, 7, 6, 1, 4, 5, 6, 7, 3, 2, 7, 3, 9, 9, 2, 8, 7, 7, 1, 5, 2, 2, 6, 5, 3, 3], // Lajur 25
+    [1, 8, 1, 4, 1, 3, 6, 9, 5, 9, 5, 9, 5, 3, 9, 5, 5, 6, 2, 6, 2, 3, 1, 2, 1, 4, 7, 2], // Lajur 26
+    [6, 7, 3, 8, 4, 9, 4, 7, 1, 3, 7, 9, 6, 2, 8, 7, 7, 9, 1, 7, 8, 5, 9, 2, 1, 5, 6, 1], // Lajur 27
+    [7, 5, 6, 5, 8, 4, 9, 5, 4, 7, 1, 2, 5, 9, 4, 2, 9, 4, 6, 5, 1, 3, 7, 2, 4, 7, 2, 3], // Lajur 28
+    [3, 3, 2, 5, 7, 3, 4, 8, 4, 5, 7, 9, 4, 7, 7, 3, 6, 5, 2, 3, 2, 7, 7, 1, 7, 3, 1, 8], // Lajur 29
+    [2, 9, 2, 3, 7, 8, 2, 4, 9, 5, 3, 4, 9, 6, 5, 6, 5, 1, 3, 6, 4, 6, 8, 6, 4, 3, 9, 5], // Lajur 30
+    [3, 8, 2, 1, 3, 2, 1, 5, 2, 6, 5, 7, 1, 7, 9, 8, 8, 7, 4, 6, 5, 1, 7, 6, 2, 6, 6, 6], // Lajur 31
+    [3, 7, 9, 3, 3, 8, 6, 1, 9, 9, 3, 1, 3, 1, 4, 7, 4, 2, 9, 7, 3, 7, 8, 2, 7, 6, 3, 9], // Lajur 32
+    [1, 4, 2, 9, 9, 4, 1, 7, 3, 9, 3, 8, 7, 1, 3, 2, 2, 8, 1, 4, 1, 9, 6, 1, 6, 5, 7, 3], // Lajur 33
+    [6, 9, 3, 3, 5, 8, 6, 6, 7, 1, 9, 9, 5, 1, 3, 4, 9, 3, 1, 4, 4, 1, 3, 3, 7, 7, 4, 8], // Lajur 34
+    [8, 6, 9, 4, 9, 7, 3, 2, 1, 5, 2, 4, 4, 4, 7, 8, 3, 2, 6, 6, 3, 7, 6, 7, 9, 1, 5, 3], // Lajur 35
+    [1, 2, 6, 9, 3, 8, 2, 9, 6, 8, 9, 6, 5, 2, 2, 5, 5, 7, 6, 8, 5, 6, 8, 1, 1, 1, 2, 4], // Lajur 36
+    [1, 2, 3, 6, 9, 3, 8, 2, 9, 6, 8, 9, 6, 5, 2, 2, 5, 7, 6, 8, 5, 6, 8, 1, 1, 1, 2, 4], // Lajur 37
+    [4, 1, 3, 4, 5, 4, 3, 5, 2, 7, 4, 1, 7, 6, 3, 1, 9, 1, 5, 1, 7, 1, 5, 8, 3, 2, 9, 1], // Lajur 38
+    [9, 9, 2, 6, 6, 6, 4, 6, 3, 4, 2, 2, 4, 7, 4, 2, 6, 5, 2, 1, 7, 6, 7, 3, 7, 3, 9, 7], // Lajur 39
+    [7, 4, 3, 7, 4, 2, 9, 1, 7, 5, 5, 8, 7, 8, 1, 1, 5, 2, 4, 2, 2, 8, 4, 4, 3, 7, 4, 3], // Lajur 40
+    [2, 5, 7, 6, 3, 4, 8, 3, 9, 3, 3, 4, 9, 9, 1, 9, 5, 5, 7, 5, 9, 8, 5, 9, 7, 4, 2, 4], // Lajur 41
+    [1, 6, 8, 4, 3, 8, 3, 2, 1, 2, 7, 5, 5, 6, 3, 5, 2, 3, 3, 3, 6, 2, 2, 8, 4, 6, 2, 1], // Lajur 42
+    [6, 9, 1, 4, 6, 1, 2, 3, 9, 3, 5, 8, 7, 3, 2, 4, 1, 3, 3, 1, 7, 8, 9, 1, 4, 5, 1, 2], // Lajur 43
+    [4, 3, 3, 4, 8, 6, 6, 3, 4, 5, 8, 5, 1, 4, 2, 2, 2, 5, 9, 2, 7, 7, 1, 8, 1, 2, 4, 7], // Lajur 44
+    [4, 7, 2, 3, 8, 7, 7, 5, 2, 9, 8, 8, 6, 2, 2, 3, 4, 3, 1, 5, 2, 8, 6, 6, 7, 8, 4, 7], // Lajur 45
+    [1, 8, 4, 4, 2, 3, 4, 9, 5, 3, 2, 5, 4, 2, 6, 3, 6, 1, 8, 5, 8, 7, 1, 5, 5, 9, 3, 1], // Lajur 46
+    [7, 4, 2, 4, 9, 4, 6, 3, 3, 7, 3, 7, 8, 3, 7, 3, 8, 6, 2, 4, 8, 7, 6, 7, 4, 2, 4, 8], // Lajur 47
+    [1, 8, 1, 4, 1, 3, 6, 9, 5, 9, 5, 9, 5, 3, 9, 5, 5, 6, 2, 6, 2, 3, 1, 9, 9, 3, 2, 7], // Lajur 48
     [1, 6, 2, 9, 5, 7, 1, 9, 8, 6, 3, 9, 9, 8, 6, 1, 8, 6, 2, 2, 4, 7, 5, 4, 4, 7, 5, 9], // Lajur 49
     [2, 6, 6, 8, 7, 6, 5, 6, 2, 4, 5, 9, 4, 4, 8, 3, 2, 5, 7, 2, 7, 5, 3, 3, 1, 9, 1, 5]  // Lajur 50
   ];
 
-  // URL Webhook Google Apps Script
   const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbySJnc-BgPuHAhwCFPUL58lEJwEHuguRmNS3qittniH-l-8DCFcXfjFDCbENwe7SEF4/exec";
 
   const CONFIG = {
@@ -311,11 +302,6 @@
     } catch(e) {}
   }
 
-  function updateDurationBadge() {
-    const sec = document.getElementById("timer-duration").value;
-    document.getElementById("badge-timer").innerText = `${sec} Detik`;
-  }
-
   function getOpLetter(opIdx) {
     if (opIdx <= 26) return String.fromCharCode(96 + opIdx);
     return "aa";
@@ -343,7 +329,6 @@
     initAudio();
     candidate.name = nameInput;
     candidate.email = emailInput;
-    CONFIG.intervalSec = parseInt(document.getElementById("timer-duration").value);
 
     document.getElementById("setup-screen").style.display = "none";
     document.getElementById("test-screen").style.display = "block";
@@ -422,7 +407,6 @@
       accuracy: total > 0 ? ((correct / total) * 100).toFixed(1) : "0.0"
     });
 
-    // Validasi selesai: jika sudah lajur 50 atau lajur terakhir data
     if (current.col >= CONFIG.totalCols || current.col >= KRAEPELIN_EXCEL_DATA.length) {
       finishTest();
     } else {
@@ -484,11 +468,11 @@
     window.removeEventListener("keydown", handleKeydown);
     if (timerInterval) clearInterval(timerInterval);
 
-    // 1. LANGSUNG TUTUP LAYAR TES & TAMPILKAN POPUP SUKSES SEKETIKA (0.0 DETIK)
+    // 1. LANGSUNG TUTUP TEST SCREEN & MUNCULKAN POPUP SUKSES SEKETIKA (0.0 DETIK)
     document.getElementById("test-screen").style.display = "none";
     showCompletionScreen("Asesmen telah selesai. Seluruh jawaban Anda sedang disinkronkan ke server penguji.");
 
-    // 2. HITUNG METRIK SECARA AMAN DENGAN VARIABEL RESMI
+    // 2. HITUNG SELURUH METRIK SECARA AMAN DENGAN VARIABEL LOKAL RESMI
     const totalAttempted = logs.length;
     const totalCorrect = logs.filter(l => l.isCorrect).length;
     const accuracy = totalAttempted > 0 ? ((totalCorrect / totalAttempted) * 100).toFixed(1) : "0.0";
@@ -542,6 +526,179 @@
         </div>
       </div>
     `;
+  }
+
+  function renderSummarySheet(target) {
+    let html = `<table class="excel-grid"><thead><tr>
+      <th class="row-index"></th>
+      <th>A (Lajur)</th>
+      <th>B (Selesai/27)</th>
+      <th>C (Jumlah Benar)</th>
+      <th>D (Jumlah Salah)</th>
+      <th>E (Akurasi %)</th>
+    </tr></thead><tbody>`;
+
+    colSummary.forEach((r, idx) => {
+      html += `<tr>
+        <td class="row-index">${idx + 1}</td>
+        <td style="text-align: center; font-weight: 600;">Lajur ${r.col}</td>
+        <td style="text-align: center;">${r.total} / 27</td>
+        <td style="text-align: center; color: #166534; font-weight: 600;">${r.correct}</td>
+        <td style="text-align: center; color: ${r.error > 0 ? '#dc2626' : '#64748b'};">${r.error}</td>
+        <td style="text-align: right; padding-right: 20px;">${r.accuracy}%</td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+    target.innerHTML = html;
+  }
+
+  function renderDiagnosticsSheet(target) {
+    const totalAttempted = logs.length;
+    const totalCorrect = logs.filter(l => l.isCorrect).length;
+    const totalError = totalAttempted - totalCorrect;
+    const accuracy = totalAttempted > 0 ? ((totalCorrect / totalAttempted) * 100).toFixed(2) : 0;
+    
+    const totals = colSummary.map(c => c.total);
+    const mean = (totals.reduce((a, b) => a + b, 0) / totals.length).toFixed(2);
+    
+    const variance = totals.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / totals.length;
+    const stdDev = Math.sqrt(variance).toFixed(2);
+
+    const firstHalf = totals.slice(0, 25).reduce((a, b) => a + b, 0) / 25;
+    const secondHalf = totals.slice(25, 50).reduce((a, b) => a + b, 0) / 25;
+    const trend = (secondHalf - firstHalf).toFixed(2);
+
+    let html = `<table class="excel-grid"><thead><tr>
+      <th class="row-index"></th>
+      <th>A (Parameter Dimensi)</th>
+      <th>B (Hasil Kalkulasi)</th>
+      <th>C (Satuan / Norma)</th>
+      <th>D (Keterangan Analisis)</th>
+    </tr></thead><tbody>
+      <tr><td class="row-index">1</td><td><strong>Tempo Kerja (Kecepatan)</strong></td><td style="text-align:center; font-weight:700;">${mean}</td><td>soal / lajur</td><td>Rata-rata output kerja per interval ${CONFIG.intervalSec} detik (Maks: 27)</td></tr>
+      <tr><td class="row-index">2</td><td><strong>Ketelitian Kerja</strong></td><td style="text-align:center; font-weight:700;">${accuracy}%</td><td>persen akurasi</td><td>Total salah: ${totalError} dari ${totalAttempted} jawaban</td></tr>
+      <tr><td class="row-index">3</td><td><strong>Kestabilan Ritme (Deviasi)</strong></td><td style="text-align:center; font-weight:700;">${stdDev}</td><td>standar deviasi (SD)</td><td>Semakin kecil nilai SD, semakin konsisten ritme pengerjaan</td></tr>
+      <tr><td class="row-index">4</td><td><strong>Ketahanan Kerja (Daya Tahan)</strong></td><td style="text-align:center; font-weight:700;">${trend >= 0 ? '+' + trend : trend}</td><td>delta selisih output</td><td>Perbandingan paruh akhir (lajur 26-50) vs paruh awal (1-25)</td></tr>
+      <tr><td class="row-index">5</td><td><strong>Total Soal Selesai</strong></td><td style="text-align:center; font-weight:700;">${totalAttempted}</td><td>item terjawab</td><td>Maksimal absolut tes: 1.350 item (50 lajur x 27 operasi)</td></tr>
+    </tbody></table>`;
+    target.innerHTML = html;
+  }
+
+  function renderTelemetrySheet(target) {
+    let html = `<table class="excel-grid"><thead><tr>
+      <th class="row-index"></th>
+      <th>A (Kode Soal)</th>
+      <th>B (Angka 1)</th>
+      <th>C (Angka 2)</th>
+      <th>D (Kunci)</th>
+      <th>E (Input)</th>
+      <th>F (Status)</th>
+      <th>G (Reaksi ms)</th>
+    </tr></thead><tbody>`;
+
+    logs.slice(0, 150).forEach((l, idx) => {
+      html += `<tr>
+        <td class="row-index">${idx + 1}</td>
+        <td style="text-align: center; font-weight:600;">${l.opCode}</td>
+        <td style="text-align: center;">${l.num1}</td>
+        <td style="text-align: center;">${l.num2}</td>
+        <td style="text-align: center; font-weight:600;">${l.expected}</td>
+        <td style="text-align: center; font-weight:600; color: ${l.isCorrect ? '#166534' : '#dc2626'};">${l.input}</td>
+        <td style="text-align: center;">${l.isCorrect ? 'BENAR' : 'SALAH'}</td>
+        <td style="text-align: right;">${l.rtMs} ms</td>
+      </tr>`;
+    });
+
+    if (logs.length > 150) {
+      html += `<tr><td class="row-index">...</td><td colspan="7" style="text-align: center; color: var(--muted); font-style: italic;">Menampilkan 150 baris pertama. Klik tombol "Unduh" untuk melihat seluruh log interaksi.</td></tr>`;
+    }
+
+    html += `</tbody></table>`;
+    target.innerHTML = html;
+  }
+
+  function renderChart() {
+    const canvas = document.getElementById("pankerChart");
+    const ctx = canvas.getContext("2d");
+    
+    canvas.width = canvas.parentElement.clientWidth - 40;
+    canvas.height = 180;
+
+    const pad = { top: 15, right: 15, bottom: 25, left: 30 };
+    const w = canvas.width - pad.left - pad.right;
+    const h = canvas.height - pad.top - pad.bottom;
+
+    const data = colSummary.map(c => c.total);
+    const maxVal = CONFIG.maxOpsPerCol; // 27
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.strokeStyle = "#cbd5e1";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, pad.top);
+    ctx.lineTo(pad.left, pad.top + h);
+    ctx.lineTo(pad.left + w, pad.top + h);
+    ctx.stroke();
+
+    ctx.fillStyle = "#64748b";
+    ctx.font = "10px sans-serif";
+    ctx.textAlign = "right";
+    ctx.fillText("0", pad.left - 6, pad.top + h);
+    ctx.fillText("14", pad.left - 6, pad.top + (h / 2));
+    ctx.fillText("27", pad.left - 6, pad.top + 10);
+
+    if (data.length < 2) return;
+
+    const stepX = w / (data.length - 1);
+    ctx.strokeStyle = "#107c41";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+
+    data.forEach((val, i) => {
+      const x = pad.left + (i * stepX);
+      const y = pad.top + h - ((val / maxVal) * h);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    data.forEach((val, i) => {
+      const x = pad.left + (i * stepX);
+      const y = pad.top + h - ((val / maxVal) * h);
+      ctx.fillStyle = "#107c41";
+      ctx.beginPath();
+      ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  function exportToCSV() {
+    let csv = "data:text/csv;charset=utf-8,";
+    csv += `Nama Peserta,${candidate.name}\n`;
+    csv += `Email Peserta,${candidate.email}\n`;
+    csv += `Total Lajur,${CONFIG.totalCols}\n`;
+    csv += `Waktu per Lajur (detik),${CONFIG.intervalSec}\n`;
+    csv += `Maksimal Operasi per Lajur,${CONFIG.maxOpsPerCol}\n\n`;
+
+    csv += "Lajur,Total Selesai/27,Benar,Salah,Akurasi (%)\n";
+    colSummary.forEach(c => {
+      csv += `${c.col},${c.total},${c.correct},${c.error},${c.accuracy}%\n`;
+    });
+
+    csv += "\n--- DETAIL INPUT TELEMETRI ---\n";
+    csv += "Lajur,Kode_Soal,Angka_1,Angka_2,Kunci,Input,Status,Waktu_Reaksi(ms)\n";
+    logs.forEach(l => {
+      csv += `${l.col},${l.opCode},${l.num1},${l.num2},${l.expected},${l.input},${l.isCorrect ? "BENAR" : "SALAH"},${l.rtMs}\n`;
+    });
+
+    const encoded = encodeURI(csv);
+    const a = document.createElement("a");
+    a.href = encoded;
+    a.download = `Kraepelin_${candidate.name.replace(/\s+/g, "_")}_${candidate.email}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 </script>
 
