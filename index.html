@@ -1,14 +1,35 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <script>
-  // Cek apakah di URL ada tulisan "?akses=rekrutmen26"
+<style id="anti-flicker"> body { display: none !important; } </style>
+<script>
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('akses') !== 'rekrutmen26') {
-    // Kalau linknya dicopy polosan doang tanpa password, webnya akan blank/error
-    document.write("<h1>Akses Ilegal</h1><p>Gunakan link resmi dari panitia.</p>");
+  const token = urlParams.get('token');
+  
+  // MASUKKAN LINK WEBHOOK GOOGLE APPS SCRIPT KAMU DI SINI
+  const webhookUrl = "https://script.google.com/macros/s/.../exec";
+
+  if (!token) {
+    alert("Akses Ditolak: Link tidak memiliki token resmi.");
     window.stop();
+  } else {
+    fetch(webhookUrl + "?token=" + token)
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === "success") {
+          document.getElementById("anti-flicker").remove(); // Munculkan web jika token valid
+          alert("Akses diverifikasi. JANGAN muat ulang (refresh) halaman ini atau token Anda akan hangus.");
+        } else {
+          alert("Akses Ditolak: " + data.message);
+          window.stop();
+        }
+      })
+      .catch(err => {
+        alert("Gagal memverifikasi token. Cek koneksi internet.");
+        window.stop();
+      });
   }
+</script>
 </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
