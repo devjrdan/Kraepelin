@@ -535,7 +535,8 @@
       stabilityStdDev: stdDev,
       columnSummary: totals.join(","),
       columnCorrect: corrects.join(","),
-      columnError: errors.join(",")
+      columnError: errors.join(","),
+      token: new URLSearchParams(window.location.search).get('token') || "-" // <-- Tambahkan baris ini
     };
 
     localStorage.setItem("kraepelin_selesai_" + candidate.email, "true");
