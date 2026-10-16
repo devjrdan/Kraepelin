@@ -1,41 +1,10 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<style id="anti-flicker"> body { display: none !important; } </style>
-<script>
-  const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get('token');
-  
-  // MASUKKAN LINK WEBHOOK GOOGLE APPS SCRIPT KAMU DI SINI
-  const webhookUrl = "https://script.google.com/macros/s/AKfycbySJnc-BgPuHAhwCFPUL58lEJwEHuguRmNS3qittniH-l-8DCFcXfjFDCbENwe7SEF4/exec";
-
-  if (!token) {
-    alert("Akses Ditolak: Link tidak memiliki token resmi.");
-    window.stop();
-  } else {
-    fetch(webhookUrl + "?token=" + token)
-      .then(response => response.json())
-      .then(data => {
-        if (data.status === "success") {
-          document.getElementById("anti-flicker").remove(); // Munculkan web jika token valid
-          alert("Akses diverifikasi. JANGAN muat ulang (refresh) halaman ini atau token Anda akan hangus.");
-        } else {
-          alert("Akses Ditolak: " + data.message);
-          window.stop();
-        }
-      })
-      .catch(err => {
-        alert("Gagal memverifikasi token. Cek koneksi internet.");
-        window.stop();
-      });
-  }
-</script>
-</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Asesmen Kraepelin Digital — Standar 50 Lajur</title>
   <style>
-    
     :root {
       --primary: #107c41; /* Excel Green */
       --primary-dark: #0b5a2f;
@@ -48,21 +17,32 @@
       --excel-grid: #e5e7eb;
     }
     
-  /* Mematikan fungsi blok teks di seluruh layar */
-  body {
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-  }
+    /* Matikan fungsi blok teks */
+    body {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+    
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 16px; }
     .container { background: var(--surface); width: 100%; max-width: 920px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); border: 1px solid var(--border); overflow: hidden; }
 
-    /* SETUP SCREEN */
+    /* LAYAR & CARD */
     .card-body { padding: 36px; }
+    .screen { display: none; }
+    .screen.active { display: block; }
+
     h1 { font-size: 1.55rem; font-weight: 700; color: var(--primary); margin-bottom: 8px; text-align: center; }
     p.desc { font-size: 0.9rem; color: var(--muted); margin-bottom: 24px; text-align: center; line-height: 1.5; }
+    
     .form-group { margin-bottom: 20px; }
     label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; }
     .sub-label { font-size: 0.8rem; font-style: italic; color: var(--muted); margin-top: 4px; display: block; }
@@ -76,11 +56,12 @@
 
     .btn { display: block; width: 100%; background: var(--primary); color: #fff; border: none; padding: 14px; font-size: 1rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
     .btn:hover { background: var(--primary-dark); }
+    .btn:disabled { background: #94a3b8; cursor: not-allowed; }
     .btn-outline { background: #fff; color: var(--primary); border: 1px solid var(--primary); margin-top: 10px; }
     .btn-outline:hover { background: #f0fdf4; }
 
     /* TEST HUD & RUNTIME */
-    #test-screen { display: none; padding: 32px; text-align: center; }
+    #test-screen { padding: 32px; text-align: center; }
     .test-hud { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-size: 0.95rem; font-weight: 700; color: var(--muted); }
     .progress-bar-bg { width: 100%; height: 6px; background: #e2e8f0; border-radius: 99px; overflow: hidden; margin-bottom: 20px; }
     .progress-bar-fill { width: 100%; height: 100%; background: var(--primary); transition: width 0.05s linear; }
@@ -96,37 +77,41 @@
     .key { background: #fff; border: 1px solid var(--border); border-radius: 8px; font-size: 1.4rem; font-weight: 700; padding: 14px; cursor: pointer; }
     .key:active { background: #e2e8f0; }
 
-    /* EXCEL WEB VIEWER */
-    #result-screen { display: none; }
-    .excel-appbar { background: var(--primary); color: #fff; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; }
-    .excel-title { font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
-    .excel-badge { background: #0b5a2f; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; }
-    .excel-formula-bar { background: #ffffff; border-bottom: 1px solid var(--border); padding: 6px 16px; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--muted); }
-    .name-box { border: 1px solid var(--border); padding: 2px 8px; border-radius: 3px; font-weight: 600; min-width: 45px; text-align: center; color: var(--text); }
-    
-    .excel-viewport { overflow: auto; max-height: 360px; background: #fff; border-bottom: 1px solid var(--border); position: relative; }
-    table.excel-grid { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
-    table.excel-grid th, table.excel-grid td { border: 1px solid var(--excel-grid); padding: 6px 12px; white-space: nowrap; }
-    table.excel-grid th { background: var(--excel-header); color: #475569; font-weight: 600; position: sticky; top: 0; z-index: 2; text-align: center; }
-    table.excel-grid th.row-index { position: sticky; left: 0; z-index: 3; width: 40px; }
-    table.excel-grid td.row-index { background: var(--excel-header); color: #64748b; font-weight: 600; text-align: center; position: sticky; left: 0; z-index: 1; }
-    table.excel-grid tr:hover td { background: #f8fafc; }
-
-    .excel-tabs { background: #f1f5f9; display: flex; border-bottom: 1px solid var(--border); padding: 4px 12px 0 12px; }
-    .sheet-tab { padding: 6px 16px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border-radius: 6px 6px 0 0; color: #475569; border: 1px solid transparent; border-bottom: none; }
-    .sheet-tab.active { background: #fff; color: var(--primary); border-color: var(--border); }
-    
-    .chart-container { padding: 20px; background: #fff; }
-    canvas { width: 100% !important; height: 180px; }
+    /* FINISH SCREEN */
+    #finish-screen { padding: 48px 32px; text-align: center; }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <!-- 1. FORM SETUP SCREEN -->
-  <div id="setup-screen" class="card-body">
-    <h1>Tes Konsentrasi Kraepelin</h1>
+
+  <!-- SCREEN 0: TOKEN GATE -->
+  <div id="screen-token" class="card-body screen active">
+    <h1>Asesmen Ketahanan Kerja Kraepelin</h1>
+    <p class="desc">Silakan masukkan kode token ujian resmi untuk memulai rangkaian tes ketahanan & konsentrasi.</p>
+    
+    <div class="form-group" style="max-width: 420px; margin: 0 auto 24px auto; text-align: left;">
+      <label>Kode Token Asesmen</label>
+      <input type="text" id="input-token" placeholder="Contoh: KRP-8X9Y2Z" style="text-transform: uppercase; font-weight: 700; letter-spacing: 1.5px; text-align: center;" autocomplete="off" required>
+    </div>
+    
+    <div style="max-width: 420px; margin: 0 auto;">
+      <button class="btn" id="btn-verify-token" onclick="verifyTokenKraepelin()">Verifikasi Token ➔</button>
+    </div>
+
+    <!-- Alert Box Jika Ditemukan Sesi Berjalan -->
+    <div id="token-resume-alert" style="display: none; max-width: 480px; margin: 24px auto 0 auto; padding: 16px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; text-align: left;">
+      <h3 style="color: #1d4ed8; font-size: 0.95rem; margin-bottom: 6px;">Sesi Ujian Ditemukan!</h3>
+      <p style="margin-bottom: 12px; font-size: 0.85rem; color: #1e293b;" id="resume-msg"></p>
+      <button class="btn" style="background: #1d4ed8; padding: 10px;" onclick="resumeKraepelinSession()">Lanjutkan Pengerjaan ➔</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 1: FORM SETUP DATA DIRI -->
+  <div id="setup-screen" class="card-body screen">
+    <h1>Petunjuk Pengerjaan Kraepelin</h1>
     <p class="desc">
+      Token Terverifikasi: <strong id="display-active-token" style="color: var(--primary);"></strong><br>
       Jumlahkan 2 angka yang tersusun vertikal dari <strong>bawah ke atas</strong>.<br>
       Ketikkan <strong>hanya digit satuan</strong> (contoh: 4 + 9 = 13, ketik <strong>3</strong>; 9 + 2 = 11, ketik <strong>1</strong>).<br>
       Layar otomatis berpindah ke lajur berikutnya setiap 15 detik.
@@ -154,15 +139,15 @@
 
     <div class="form-group">
       <label>Email Peserta <span style="color: #dc2626;">*</span></label>
-      <input type="email" id="candidate-email" placeholder="xxx@domain.com" required>
-      <span class="sub-label"><em>(contoh: xxx@blabla.com)</em></span>
+      <input type="email" id="candidate-email" placeholder="nama@domain.com" required>
+      <span class="sub-label"><em>Pastikan format benar (contoh: xxx@domain.com)</em></span>
     </div>
 
     <button class="btn" onclick="startTest()">Mulai Pengerjaan</button>
   </div>
 
-  <!-- 2. RUNTIME TEST SCREEN -->
-  <div id="test-screen">
+  <!-- SCREEN 2: RUNTIME TEST SCREEN -->
+  <div id="test-screen" class="screen">
     <div class="test-hud">
       <span id="hud-col">Lajur: 1 / 50</span>
       <span id="hud-row">Operasi: 1 / 27</span>
@@ -199,98 +184,70 @@
     </div>
   </div>
 
-  <!-- 3. EXCEL WEB RESULTS SCREEN -->
-  <div id="result-screen">
-    <div class="excel-appbar">
-      <div class="excel-title">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-3.5 14L12 12.5 8.5 17H6l4.5-5.5L6 6h2.5L12 10.5 15.5 6H18l-4.5 5.5L18 17h-2.5z"/></svg>
-        <span>Laporan_Asesmen_Kraepelin.xlsx</span>
-        <span class="excel-badge">Excel Online View</span>
-      </div>
-      <div>
-        <button class="btn" style="padding: 6px 14px; font-size: 0.8rem; background: #0b5a2f;" onclick="exportToCSV()">Unduh (.xlsx/.csv)</button>
-      </div>
-    </div>
-
-    <div class="excel-formula-bar">
-      <div class="name-box">A1</div>
-      <div>fx</div>
-      <div id="fx-display" style="color: var(--text);">="Hasil Uji Kraepelin: " & candidate_name</div>
-    </div>
-
-    <div class="chart-container">
-      <div style="font-size: 0.8rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 8px;">Grafik Kurva Panker (50 Lajur)</div>
-      <canvas id="pankerChart"></canvas>
-    </div>
-
-    <div class="excel-viewport" id="excel-viewport"></div>
-
-    <div class="excel-tabs">
-      <div class="sheet-tab active" id="tab-btn-summary" onclick="switchSheet('summary')">Rekap_50_Lajur</div>
-      <div class="sheet-tab" id="tab-btn-diagnostics" onclick="switchSheet('diagnostics')">Norma_Psikometri</div>
-      <div class="sheet-tab" id="tab-btn-telemetry" onclick="switchSheet('telemetry')">Log_Detail_Input</div>
-    </div>
-
-    <div style="padding: 16px 20px; background: #fff; display: flex; justify-content: space-between;">
-      <button class="btn btn-outline" style="width: auto; margin-top:0;" onclick="location.reload()">Ulangi Sesi</button>
-      <div id="session-metadata" style="font-size: 0.8rem; color: var(--muted); align-self: center;"></div>
-    </div>
+  <!-- SCREEN 3: FINISH SCREEN -->
+  <div id="finish-screen" class="screen">
+    <h2 style="color: var(--primary); margin-bottom: 12px; font-size: 1.6rem;">Asesmen Kraepelin Selesai</h2>
+    <p id="finish-msg" style="color: var(--muted); font-size: 0.95rem; line-height: 1.6; max-width: 500px; margin: 0 auto 24px auto;">
+      Menyinkronkan hasil asesmen ke server penguji...
+    </p>
+    <div id="session-metadata" style="font-size: 0.85rem; color: #94a3b8;"></div>
   </div>
+
 </div>
 
 <script>
-  // 50 LAJUR DARI FILE EXCEL (DIURUTKAN DARI BAWAH KE ATAS: INDEKS 0 = BARIS PALING BAWAH / ROW 31)
+  // 50 LAJUR DARI EXCEL KRAEPELIN BAKU
   const KRAEPELIN_EXCEL_DATA = [
-    [4, 9, 2, 7, 4, 6, 8, 9, 2, 9, 5, 6, 2, 2, 8, 1, 1, 2, 2, 9, 6, 6, 4, 7, 9, 7, 7, 2], // Lajur 1
-    [3, 8, 1, 6, 1, 7, 5, 8, 6, 2, 4, 6, 5, 9, 2, 5, 3, 6, 3, 5, 9, 1, 7, 6, 9, 6, 5, 7], // Lajur 2
-    [5, 5, 5, 7, 5, 6, 8, 1, 9, 5, 7, 5, 8, 4, 2, 1, 1, 9, 8, 9, 6, 3, 2, 3, 9, 1, 5, 1], // Lajur 3
-    [5, 6, 4, 2, 8, 8, 7, 5, 3, 5, 7, 8, 7, 4, 8, 8, 7, 6, 2, 3, 7, 7, 6, 5, 2, 4, 3, 2], // Lajur 4
-    [1, 3, 1, 6, 9, 9, 3, 2, 5, 8, 7, 3, 7, 2, 6, 7, 1, 4, 6, 4, 8, 7, 2, 1, 5, 2, 6, 3], // Lajur 5
-    [7, 1, 7, 3, 7, 8, 5, 6, 2, 9, 6, 8, 6, 7, 8, 4, 7, 8, 3, 5, 9, 6, 8, 7, 1, 9, 8, 6], // Lajur 6
-    [5, 7, 1, 6, 6, 4, 6, 9, 4, 5, 5, 3, 5, 9, 2, 7, 7, 8, 7, 9, 4, 4, 7, 2, 5, 8, 4, 5], // Lajur 7
-    [1, 1, 9, 7, 7, 4, 4, 2, 5, 3, 3, 6, 2, 6, 6, 8, 8, 7, 9, 4, 5, 1, 5, 1, 8, 8, 5, 5], // Lajur 8
-    [6, 1, 4, 4, 3, 1, 6, 9, 1, 7, 7, 5, 8, 2, 6, 7, 9, 1, 1, 4, 3, 2, 5, 2, 6, 5, 7, 7], // Lajur 9
-    [5, 3, 9, 1, 4, 7, 8, 6, 9, 4, 1, 3, 6, 3, 2, 7, 5, 3, 2, 5, 4, 5, 6, 4, 9, 9, 1, 9], // Lajur 10
-    [4, 5, 5, 5, 3, 8, 9, 4, 8, 5, 8, 8, 4, 7, 1, 5, 4, 3, 9, 5, 4, 3, 4, 8, 3, 7, 9, 9], // Lajur 11
-    [7, 9, 8, 6, 6, 2, 6, 3, 2, 7, 7, 9, 9, 3, 3, 2, 7, 8, 5, 5, 2, 1, 9, 3, 7, 6, 9, 4], // Lajur 12
-    [3, 1, 7, 8, 9, 4, 2, 5, 7, 3, 5, 4, 6, 2, 3, 6, 3, 8, 6, 8, 9, 5, 3, 8, 6, 3, 2, 4], // Lajur 13
-    [3, 5, 2, 7, 2, 2, 4, 8, 3, 3, 9, 9, 1, 1, 4, 6, 9, 2, 5, 5, 9, 5, 8, 9, 9, 2, 3, 3], // Lajur 14
-    [2, 1, 5, 5, 5, 4, 8, 6, 2, 1, 4, 9, 8, 8, 8, 5, 9, 5, 4, 5, 3, 8, 9, 3, 5, 9, 7, 4], // Lajur 15
-    [2, 7, 4, 2, 6, 3, 7, 6, 4, 8, 1, 4, 8, 7, 3, 9, 5, 2, 6, 6, 3, 9, 9, 3, 8, 1, 9, 5], // Lajur 16
-    [2, 8, 1, 3, 7, 1, 9, 4, 9, 2, 7, 9, 4, 5, 6, 7, 7, 6, 7, 6, 5, 5, 3, 2, 8, 6, 4, 7], // Lajur 17
-    [3, 4, 8, 3, 1, 7, 4, 5, 9, 6, 5, 4, 2, 3, 3, 5, 7, 5, 7, 3, 3, 8, 3, 9, 3, 1, 6, 8], // Lajur 18
-    [6, 7, 1, 7, 6, 4, 2, 9, 4, 6, 6, 3, 5, 2, 8, 4, 9, 1, 9, 1, 7, 9, 4, 2, 7, 1, 1, 2], // Lajur 19
-    [2, 7, 9, 5, 3, 4, 5, 5, 5, 9, 1, 6, 4, 1, 5, 8, 7, 7, 4, 5, 7, 8, 8, 1, 7, 4, 8, 6], // Lajur 20
-    [9, 4, 2, 9, 8, 2, 2, 1, 7, 1, 9, 4, 2, 7, 9, 3, 6, 9, 1, 7, 4, 7, 5, 6, 1, 2, 1, 9], // Lajur 21
-    [9, 4, 2, 9, 8, 2, 2, 1, 7, 1, 9, 4, 2, 7, 9, 3, 6, 9, 1, 7, 4, 7, 5, 6, 1, 2, 1, 9], // Lajur 22
-    [4, 4, 9, 1, 9, 1, 6, 8, 6, 2, 2, 1, 4, 4, 3, 2, 9, 6, 3, 8, 6, 2, 2, 2, 9, 9, 2, 5], // Lajur 23
-    [1, 2, 4, 7, 6, 9, 5, 1, 3, 8, 7, 6, 5, 7, 9, 7, 4, 2, 4, 1, 9, 1, 4, 8, 7, 4, 5, 9], // Lajur 24
-    [2, 7, 3, 7, 6, 1, 4, 5, 6, 7, 3, 2, 7, 3, 9, 9, 2, 8, 7, 7, 1, 5, 2, 2, 6, 5, 3, 3], // Lajur 25
-    [1, 8, 1, 4, 1, 3, 6, 9, 5, 9, 5, 9, 5, 3, 9, 5, 5, 6, 2, 6, 2, 3, 1, 2, 1, 4, 7, 2], // Lajur 26
-    [6, 7, 3, 8, 4, 9, 4, 7, 1, 3, 7, 9, 6, 2, 8, 7, 7, 9, 1, 7, 8, 5, 9, 2, 1, 5, 6, 1], // Lajur 27
-    [7, 5, 6, 5, 8, 4, 9, 5, 4, 7, 1, 2, 5, 9, 4, 2, 9, 4, 6, 5, 1, 3, 7, 2, 4, 7, 2, 3], // Lajur 28
-    [3, 3, 2, 5, 7, 3, 4, 8, 4, 5, 7, 9, 4, 7, 7, 3, 6, 5, 2, 3, 2, 7, 7, 1, 7, 3, 1, 8], // Lajur 29
-    [2, 9, 2, 3, 7, 8, 2, 4, 9, 5, 3, 4, 9, 6, 5, 6, 5, 1, 3, 6, 4, 6, 8, 6, 4, 3, 9, 5], // Lajur 30
-    [3, 8, 2, 1, 3, 2, 1, 5, 2, 6, 5, 7, 1, 7, 9, 8, 8, 7, 4, 6, 5, 1, 7, 6, 2, 6, 6, 6], // Lajur 31
-    [3, 7, 9, 3, 3, 8, 6, 1, 9, 9, 3, 1, 3, 1, 4, 7, 4, 2, 9, 7, 3, 7, 8, 2, 7, 6, 3, 9], // Lajur 32
-    [1, 4, 2, 9, 9, 4, 1, 7, 3, 9, 3, 8, 7, 1, 3, 2, 2, 8, 1, 4, 1, 9, 6, 1, 6, 5, 7, 3], // Lajur 33
-    [6, 9, 3, 3, 5, 8, 6, 6, 7, 1, 9, 9, 5, 1, 3, 4, 9, 3, 1, 4, 4, 1, 3, 3, 7, 7, 4, 8], // Lajur 34
-    [8, 6, 9, 4, 9, 7, 3, 2, 1, 5, 2, 4, 4, 4, 7, 8, 3, 2, 6, 6, 3, 7, 6, 7, 9, 1, 5, 3], // Lajur 35
-    [1, 2, 6, 9, 3, 8, 2, 9, 6, 8, 9, 6, 5, 2, 2, 5, 5, 7, 6, 8, 5, 6, 8, 1, 1, 1, 2, 4], // Lajur 36
-    [1, 2, 3, 6, 9, 3, 8, 2, 9, 6, 8, 9, 6, 5, 2, 2, 5, 7, 6, 8, 5, 6, 8, 1, 1, 1, 2, 4], // Lajur 37
-    [4, 1, 3, 4, 5, 4, 3, 5, 2, 7, 4, 1, 7, 6, 3, 1, 9, 1, 5, 1, 7, 1, 5, 8, 3, 2, 9, 1], // Lajur 38
-    [9, 9, 2, 6, 6, 6, 4, 6, 3, 4, 2, 2, 4, 7, 4, 2, 6, 5, 2, 1, 7, 6, 7, 3, 7, 3, 9, 7], // Lajur 39
-    [7, 4, 3, 7, 4, 2, 9, 1, 7, 5, 5, 8, 7, 8, 1, 1, 5, 2, 4, 2, 2, 8, 4, 4, 3, 7, 4, 3], // Lajur 40
-    [2, 5, 7, 6, 3, 4, 8, 3, 9, 3, 3, 4, 9, 9, 1, 9, 5, 5, 7, 5, 9, 8, 5, 9, 7, 4, 2, 4], // Lajur 41
-    [1, 6, 8, 4, 3, 8, 3, 2, 1, 2, 7, 5, 5, 6, 3, 5, 2, 3, 3, 3, 6, 2, 2, 8, 4, 6, 2, 1], // Lajur 42
-    [6, 9, 1, 4, 6, 1, 2, 3, 9, 3, 5, 8, 7, 3, 2, 4, 1, 3, 3, 1, 7, 8, 9, 1, 4, 5, 1, 2], // Lajur 43
-    [4, 3, 3, 4, 8, 6, 6, 3, 4, 5, 8, 5, 1, 4, 2, 2, 2, 5, 9, 2, 7, 7, 1, 8, 1, 2, 4, 7], // Lajur 44
-    [4, 7, 2, 3, 8, 7, 7, 5, 2, 9, 8, 8, 6, 2, 2, 3, 4, 3, 1, 5, 2, 8, 6, 6, 7, 8, 4, 7], // Lajur 45
-    [1, 8, 4, 4, 2, 3, 4, 9, 5, 3, 2, 5, 4, 2, 6, 3, 6, 1, 8, 5, 8, 7, 1, 5, 5, 9, 3, 1], // Lajur 46
-    [7, 4, 2, 4, 9, 4, 6, 3, 3, 7, 3, 7, 8, 3, 7, 3, 8, 6, 2, 4, 8, 7, 6, 7, 4, 2, 4, 8], // Lajur 47
-    [1, 8, 1, 4, 1, 3, 6, 9, 5, 9, 5, 9, 5, 3, 9, 5, 5, 6, 2, 6, 2, 3, 1, 9, 9, 3, 2, 7], // Lajur 48
-    [1, 6, 2, 9, 5, 7, 1, 9, 8, 6, 3, 9, 9, 8, 6, 1, 8, 6, 2, 2, 4, 7, 5, 4, 4, 7, 5, 9], // Lajur 49
-    [2, 6, 6, 8, 7, 6, 5, 6, 2, 4, 5, 9, 4, 4, 8, 3, 2, 5, 7, 2, 7, 5, 3, 3, 1, 9, 1, 5]  // Lajur 50
+    [4, 9, 2, 7, 4, 6, 8, 9, 2, 9, 5, 6, 2, 2, 8, 1, 1, 2, 2, 9, 6, 6, 4, 7, 9, 7, 7, 2],
+    [3, 8, 1, 6, 1, 7, 5, 8, 6, 2, 4, 6, 5, 9, 2, 5, 3, 6, 3, 5, 9, 1, 7, 6, 9, 6, 5, 7],
+    [5, 5, 5, 7, 5, 6, 8, 1, 9, 5, 7, 5, 8, 4, 2, 1, 1, 9, 8, 9, 6, 3, 2, 3, 9, 1, 5, 1],
+    [5, 6, 4, 2, 8, 8, 7, 5, 3, 5, 7, 8, 7, 4, 8, 8, 7, 6, 2, 3, 7, 7, 6, 5, 2, 4, 3, 2],
+    [1, 3, 1, 6, 9, 9, 3, 2, 5, 8, 7, 3, 7, 2, 6, 7, 1, 4, 6, 4, 8, 7, 2, 1, 5, 2, 6, 3],
+    [7, 1, 7, 3, 7, 8, 5, 6, 2, 9, 6, 8, 6, 7, 8, 4, 7, 8, 3, 5, 9, 6, 8, 7, 1, 9, 8, 6],
+    [5, 7, 1, 6, 6, 4, 6, 9, 4, 5, 5, 3, 5, 9, 2, 7, 7, 8, 7, 9, 4, 4, 7, 2, 5, 8, 4, 5],
+    [1, 1, 9, 7, 7, 4, 4, 2, 5, 3, 3, 6, 2, 6, 6, 8, 8, 7, 9, 4, 5, 1, 5, 1, 8, 8, 5, 5],
+    [6, 1, 4, 4, 3, 1, 6, 9, 1, 7, 7, 5, 8, 2, 6, 7, 9, 1, 1, 4, 3, 2, 5, 2, 6, 5, 7, 7],
+    [5, 3, 9, 1, 4, 7, 8, 6, 9, 4, 1, 3, 6, 3, 2, 7, 5, 3, 2, 5, 4, 5, 6, 4, 9, 9, 1, 9],
+    [4, 5, 5, 5, 3, 8, 9, 4, 8, 5, 8, 8, 4, 7, 1, 5, 4, 3, 9, 5, 4, 3, 4, 8, 3, 7, 9, 9],
+    [7, 9, 8, 6, 6, 2, 6, 3, 2, 7, 7, 9, 9, 3, 3, 2, 7, 8, 5, 5, 2, 1, 9, 3, 7, 6, 9, 4],
+    [3, 1, 7, 8, 9, 4, 2, 5, 7, 3, 5, 4, 6, 2, 3, 6, 3, 8, 6, 8, 9, 5, 3, 8, 6, 3, 2, 4],
+    [3, 5, 2, 7, 2, 2, 4, 8, 3, 3, 9, 9, 1, 1, 4, 6, 9, 2, 5, 5, 9, 5, 8, 9, 9, 2, 3, 3],
+    [2, 1, 5, 5, 5, 4, 8, 6, 2, 1, 4, 9, 8, 8, 8, 5, 9, 5, 4, 5, 3, 8, 9, 3, 5, 9, 7, 4],
+    [2, 7, 4, 2, 6, 3, 7, 6, 4, 8, 1, 4, 8, 7, 3, 9, 5, 2, 6, 6, 3, 9, 9, 3, 8, 1, 9, 5],
+    [2, 8, 1, 3, 7, 1, 9, 4, 9, 2, 7, 9, 4, 5, 6, 7, 7, 6, 7, 6, 5, 5, 3, 2, 8, 6, 4, 7],
+    [3, 4, 8, 3, 1, 7, 4, 5, 9, 6, 5, 4, 2, 3, 3, 5, 7, 5, 7, 3, 3, 8, 3, 9, 3, 1, 6, 8],
+    [6, 7, 1, 7, 6, 4, 2, 9, 4, 6, 6, 3, 5, 2, 8, 4, 9, 1, 9, 1, 7, 9, 4, 2, 7, 1, 1, 2],
+    [2, 7, 9, 5, 3, 4, 5, 5, 5, 9, 1, 6, 4, 1, 5, 8, 7, 7, 4, 5, 7, 8, 8, 1, 7, 4, 8, 6],
+    [9, 4, 2, 9, 8, 2, 2, 1, 7, 1, 9, 4, 2, 7, 9, 3, 6, 9, 1, 7, 4, 7, 5, 6, 1, 2, 1, 9],
+    [9, 4, 2, 9, 8, 2, 2, 1, 7, 1, 9, 4, 2, 7, 9, 3, 6, 9, 1, 7, 4, 7, 5, 6, 1, 2, 1, 9],
+    [4, 4, 9, 1, 9, 1, 6, 8, 6, 2, 2, 1, 4, 4, 3, 2, 9, 6, 3, 8, 6, 2, 2, 2, 9, 9, 2, 5],
+    [1, 2, 4, 7, 6, 9, 5, 1, 3, 8, 7, 6, 5, 7, 9, 7, 4, 2, 4, 1, 9, 1, 4, 8, 7, 4, 5, 9],
+    [2, 7, 3, 7, 6, 1, 4, 5, 6, 7, 3, 2, 7, 3, 9, 9, 2, 8, 7, 7, 1, 5, 2, 2, 6, 5, 3, 3],
+    [1, 8, 1, 4, 1, 3, 6, 9, 5, 9, 5, 9, 5, 3, 9, 5, 5, 6, 2, 6, 2, 3, 1, 2, 1, 4, 7, 2],
+    [6, 7, 3, 8, 4, 9, 4, 7, 1, 3, 7, 9, 6, 2, 8, 7, 7, 9, 1, 7, 8, 5, 9, 2, 1, 5, 6, 1],
+    [7, 5, 6, 5, 8, 4, 9, 5, 4, 7, 1, 2, 5, 9, 4, 2, 9, 4, 6, 5, 1, 3, 7, 2, 4, 7, 2, 3],
+    [3, 3, 2, 5, 7, 3, 4, 8, 4, 5, 7, 9, 4, 7, 7, 3, 6, 5, 2, 3, 2, 7, 7, 1, 7, 3, 1, 8],
+    [2, 9, 2, 3, 7, 8, 2, 4, 9, 5, 3, 4, 9, 6, 5, 6, 5, 1, 3, 6, 4, 6, 8, 6, 4, 3, 9, 5],
+    [3, 8, 2, 1, 3, 2, 1, 5, 2, 6, 5, 7, 1, 7, 9, 8, 8, 7, 4, 6, 5, 1, 7, 6, 2, 6, 6, 6],
+    [3, 7, 9, 3, 3, 8, 6, 1, 9, 9, 3, 1, 3, 1, 4, 7, 4, 2, 9, 7, 3, 7, 8, 2, 7, 6, 3, 9],
+    [1, 4, 2, 9, 9, 4, 1, 7, 3, 9, 3, 8, 7, 1, 3, 2, 2, 8, 1, 4, 1, 9, 6, 1, 6, 5, 7, 3],
+    [6, 9, 3, 3, 5, 8, 6, 6, 7, 1, 9, 9, 5, 1, 3, 4, 9, 3, 1, 4, 4, 1, 3, 3, 7, 7, 4, 8],
+    [8, 6, 9, 4, 9, 7, 3, 2, 1, 5, 2, 4, 4, 4, 7, 8, 3, 2, 6, 6, 3, 7, 6, 7, 9, 1, 5, 3],
+    [1, 2, 6, 9, 3, 8, 2, 9, 6, 8, 9, 6, 5, 2, 2, 5, 5, 7, 6, 8, 5, 6, 8, 1, 1, 1, 2, 4],
+    [1, 2, 3, 6, 9, 3, 8, 2, 9, 6, 8, 9, 6, 5, 2, 2, 5, 7, 6, 8, 5, 6, 8, 1, 1, 1, 2, 4],
+    [4, 1, 3, 4, 5, 4, 3, 5, 2, 7, 4, 1, 7, 6, 3, 1, 9, 1, 5, 1, 7, 1, 5, 8, 3, 2, 9, 1],
+    [9, 9, 2, 6, 6, 6, 4, 6, 3, 4, 2, 2, 4, 7, 4, 2, 6, 5, 2, 1, 7, 6, 7, 3, 7, 3, 9, 7],
+    [7, 4, 3, 7, 4, 2, 9, 1, 7, 5, 5, 8, 7, 8, 1, 1, 5, 2, 4, 2, 2, 8, 4, 4, 3, 7, 4, 3],
+    [2, 5, 7, 6, 3, 4, 8, 3, 9, 3, 3, 4, 9, 9, 1, 9, 5, 5, 7, 5, 9, 8, 5, 9, 7, 4, 2, 4],
+    [1, 6, 8, 4, 3, 8, 3, 2, 1, 2, 7, 5, 5, 6, 3, 5, 2, 3, 3, 3, 6, 2, 2, 8, 4, 6, 2, 1],
+    [6, 9, 1, 4, 6, 1, 2, 3, 9, 3, 5, 8, 7, 3, 2, 4, 1, 3, 3, 1, 7, 8, 9, 1, 4, 5, 1, 2],
+    [4, 3, 3, 4, 8, 6, 6, 3, 4, 5, 8, 5, 1, 4, 2, 2, 2, 5, 9, 2, 7, 7, 1, 8, 1, 2, 4, 7],
+    [4, 7, 2, 3, 8, 7, 7, 5, 2, 9, 8, 8, 6, 2, 2, 3, 4, 3, 1, 5, 2, 8, 6, 6, 7, 8, 4, 7],
+    [1, 8, 4, 4, 2, 3, 4, 9, 5, 3, 2, 5, 4, 2, 6, 3, 6, 1, 8, 5, 8, 7, 1, 5, 5, 9, 3, 1],
+    [7, 4, 2, 4, 9, 4, 6, 3, 3, 7, 3, 7, 8, 3, 7, 3, 8, 6, 2, 4, 8, 7, 6, 7, 4, 2, 4, 8],
+    [1, 8, 1, 4, 1, 3, 6, 9, 5, 9, 5, 9, 5, 3, 9, 5, 5, 6, 2, 6, 2, 3, 1, 9, 9, 3, 2, 7],
+    [1, 6, 2, 9, 5, 7, 1, 9, 8, 6, 3, 9, 9, 8, 6, 1, 8, 6, 2, 2, 4, 7, 5, 4, 4, 7, 5, 9],
+    [2, 6, 6, 8, 7, 6, 5, 6, 2, 4, 5, 9, 4, 4, 8, 3, 2, 5, 7, 2, 7, 5, 3, 3, 1, 9, 1, 5]
   ];
 
   const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbySJnc-BgPuHAhwCFPUL58lEJwEHuguRmNS3qittniH-l-8DCFcXfjFDCbENwe7SEF4/exec";
@@ -301,7 +258,7 @@
     maxOpsPerCol: 27
   };
 
-  let candidate = { name: "", email: "" };
+  let candidate = { token: "", name: "", email: "" };
   let current = {
     col: 1,
     op: 1,
@@ -316,8 +273,8 @@
   let colSummary = [];
   let timerInterval = null;
   let audioCtx = null;
-  let activeSheet = "summary";
 
+  // --- INISIALISASI AUDIO ---
   function initAudio() {
     if (!audioCtx) {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -340,41 +297,149 @@
     } catch(e) {}
   }
 
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  // --- DETEKSI SESI AKTIF KETIKA LOAD ---
+  window.addEventListener("load", function () {
+    const saved = localStorage.getItem("krp_active_session");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.candidate && parsed.candidate.token) {
+          document.getElementById("input-token").value = parsed.candidate.token;
+          const resumeBox = document.getElementById("token-resume-alert");
+          const resumeMsg = document.getElementById("resume-msg");
+          resumeMsg.innerHTML = `Peserta: <strong>${parsed.candidate.name}</strong><br>Status: Sedang di <strong>Lajur ${parsed.currentCol}</strong> dari 50 lajur.`;
+          resumeBox.style.display = "block";
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  });
+
+  // Cegah keluar tab / refresh sengaja
+  window.addEventListener("beforeunload", function (e) {
+    if (localStorage.getItem("krp_active_session")) {
+      e.preventDefault();
+      e.returnValue = "Tes Kraepelin sedang berlangsung! Sesi pengerjaan Anda akan disimpan.";
+    }
+  });
+
+  function saveKraepelinSession() {
+    if (!candidate.token) return;
+    const sessionData = {
+      candidate: candidate,
+      currentCol: current.col,
+      logs: logs,
+      colSummary: colSummary
+    };
+    localStorage.setItem("krp_active_session", JSON.stringify(sessionData));
+  }
+
+  // --- VERIFIKASI TOKEN KRAEPELIN (SCREEN 0) ---
+  async function verifyTokenKraepelin() {
+    const inputEl = document.getElementById("input-token");
+    const val = inputEl.value.trim().toUpperCase();
+    if (!val) return alert("Silakan masukkan kode token Kraepelin Anda!");
+
+    // Cek apakah token sudah selesai di device ini
+    const voidTokens = JSON.parse(localStorage.getItem("krp_void_tokens") || "[]");
+    if (voidTokens.includes(val)) {
+      return alert("Token ini sudah dinyatakan SELESAI (VOID) di perangkat ini.");
+    }
+
+    // Fast-resume jika token sama dengan sesi yang belum rampung
+    const saved = localStorage.getItem("krp_active_session");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.candidate && parsed.candidate.token === val) {
+          resumeKraepelinSession();
+          return;
+        }
+      } catch (e) {}
+    }
+
+    const btn = document.getElementById("btn-verify-token");
+    const originalText = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = "Memverifikasi...";
+
+    try {
+      const response = await fetch(`${WEBHOOK_URL}?action=verifyToken&token=${encodeURIComponent(val)}`);
+      const result = await response.json();
+
+      if (!result.valid) {
+        alert(result.message || "Token tidak valid!");
+        return;
+      }
+
+      candidate.token = val;
+      document.getElementById("display-active-token").innerText = val;
+      showScreen("setup-screen");
+
+    } catch (err) {
+      console.error(err);
+      alert("Gagal menghubungi server verifikasi. Periksa koneksi internet Anda.");
+    } finally {
+      btn.disabled = false;
+      btn.innerText = originalText;
+    }
+  }
+
+  function resumeKraepelinSession() {
+    const saved = localStorage.getItem("krp_active_session");
+    if (!saved) return;
+    const parsed = JSON.parse(saved);
+
+    candidate = parsed.candidate;
+    current.col = parsed.currentCol || 1;
+    logs = parsed.logs || [];
+    colSummary = parsed.colSummary || [];
+
+    alert(`Selamat datang kembali, ${candidate.name}! Melanjutkan tes Kraepelin dari lajur ${current.col}.`);
+
+    initAudio();
+    showScreen("test-screen");
+    startColumn(current.col);
+    window.addEventListener("keydown", handleKeydown);
+  }
+
   function getOpLetter(opIdx) {
     if (opIdx <= 26) return String.fromCharCode(96 + opIdx);
     return "aa";
   }
 
+  // --- MULAI TES SETELAH ISI DATA DIRI ---
   function startTest() {
     const nameInput = document.getElementById("candidate-name").value.trim();
     const emailInput = document.getElementById("candidate-email").value.trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!nameInput) {
-      alert("Mohon masukkan nama lengkap peserta.");
-      return;
-    }
+    if (!nameInput) return alert("Mohon masukkan nama lengkap peserta.");
     if (!emailInput || !emailRegex.test(emailInput)) {
-      alert("Mohon masukkan alamat email yang valid (contoh: xxx@blabla.com).");
-      return;
+      return alert("Mohon masukkan alamat email yang valid (contoh: nama@domain.com).");
     }
 
     if (localStorage.getItem("kraepelin_selesai_" + emailInput)) {
-      alert("Akun email ini tercatat sudah menyelesaikan tes. Pengulangan tes tidak diizinkan.");
-      return;
+      return alert("Akun email ini tercatat sudah menyelesaikan tes Kraepelin.");
     }
 
     initAudio();
     candidate.name = nameInput;
     candidate.email = emailInput;
 
-    document.getElementById("setup-screen").style.display = "none";
-    document.getElementById("test-screen").style.display = "block";
+    showScreen("test-screen");
 
     current.col = 1;
     logs = [];
     colSummary = [];
 
+    saveKraepelinSession();
     startColumn(1);
     window.addEventListener("keydown", handleKeydown);
   }
@@ -397,6 +462,7 @@
 
     updateHUD();
     renderDigits();
+    saveKraepelinSession();
 
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(updateTimer, 40);
@@ -444,6 +510,8 @@
       error: error,
       accuracy: total > 0 ? ((correct / total) * 100).toFixed(1) : "0.0"
     });
+
+    saveKraepelinSession();
 
     if (current.col >= CONFIG.totalCols || current.col >= KRAEPELIN_EXCEL_DATA.length) {
       finishTest();
@@ -502,15 +570,13 @@
     renderDigits();
   }
 
+  // --- SELESAI & SUBMIT KE SERVER ---
   function finishTest() {
     window.removeEventListener("keydown", handleKeydown);
     if (timerInterval) clearInterval(timerInterval);
 
-    // 1. LANGSUNG TUTUP TEST SCREEN & MUNCULKAN POPUP SUKSES SEKETIKA (0.0 DETIK)
-    document.getElementById("test-screen").style.display = "none";
-    showCompletionScreen("Asesmen telah selesai. Seluruh jawaban Anda sedang disinkronkan ke server penguji.");
+    showScreen("finish-screen");
 
-    // 2. HITUNG SELURUH METRIK SECARA AMAN DENGAN VARIABEL LOKAL RESMI
     const totalAttempted = logs.length;
     const totalCorrect = logs.filter(l => l.isCorrect).length;
     const accuracy = totalAttempted > 0 ? ((totalCorrect / totalAttempted) * 100).toFixed(1) : "0.0";
@@ -524,7 +590,9 @@
     const stdDev = Math.sqrt(variance).toFixed(2);
 
     const payload = {
+      testType: "KRAEPELIN",
       timestamp: new Date().toLocaleString("id-ID"),
+      token: candidate.token,
       name: candidate.name,
       email: candidate.email,
       intervalSeconds: CONFIG.intervalSec,
@@ -535,229 +603,48 @@
       stabilityStdDev: stdDev,
       columnSummary: totals.join(","),
       columnCorrect: corrects.join(","),
-      columnError: errors.join(","),
-      token: new URLSearchParams(window.location.search).get('token') || "-" // <-- Tambahkan baris ini
+      columnError: errors.join(",")
     };
 
+    // Tandai token VOID di lokal dan hapus sesi sementara
+    let voidTokens = JSON.parse(localStorage.getItem("krp_void_tokens") || "[]");
+    if (!voidTokens.includes(candidate.token)) {
+      voidTokens.push(candidate.token);
+      localStorage.setItem("krp_void_tokens", JSON.stringify(voidTokens));
+    }
     localStorage.setItem("kraepelin_selesai_" + candidate.email, "true");
+    localStorage.removeItem("krp_active_session");
 
-    // 3. PENGIRIMAN BACKGROUND NON-BLOCKING (TANPA AWAIT)
     fetch(WEBHOOK_URL, {
       method: "POST",
       mode: "no-cors",
       headers: { "Content-Type": "text/plain" },
       body: JSON.stringify(payload)
     }).then(() => {
-      showCompletionScreen("Asesmen telah selesai. Seluruh data berhasil tersimpan secara aman. Silakan konfirmasi ke penguji.");
+      document.getElementById("finish-msg").innerHTML = 
+        `<span style="color: #107c41; font-weight: 700;">Data Berhasil Terkirim!</span><br><br>Terima kasih, <strong>${candidate.name}</strong>. Rangkaian tes Kraepelin telah selesai. Token Anda (<strong>${candidate.token}</strong>) telah dinonaktifkan.`;
+      document.getElementById("session-metadata").innerText = `ID Peserta: ${candidate.email} | Token: ${candidate.token}`;
     }).catch(err => {
-      console.error("Sinkronisasi latar:", err);
+      document.getElementById("finish-msg").innerHTML = "Selesai. Terjadi sedikit kendala visualisasi jaringan, namun data lokal Anda aman.";
     });
   }
 
-  function showCompletionScreen(msg) {
-    const container = document.querySelector(".container");
-    container.innerHTML = `
-      <div style="padding: 40px; text-align: center;">
-        <h2 style="color: #107c41; margin-bottom: 12px;">Sesi Asesmen Selesai</h2>
-        <p style="color: #475569; font-size: 0.95rem; line-height: 1.6;">${msg}</p>
-        <div style="margin-top: 24px; font-size: 0.8rem; color: #94a3b8;">
-          ID Peserta: ${candidate.email}
-        </div>
-      </div>
-    `;
-  }
-
-  function renderSummarySheet(target) {
-    let html = `<table class="excel-grid"><thead><tr>
-      <th class="row-index"></th>
-      <th>A (Lajur)</th>
-      <th>B (Selesai/27)</th>
-      <th>C (Jumlah Benar)</th>
-      <th>D (Jumlah Salah)</th>
-      <th>E (Akurasi %)</th>
-    </tr></thead><tbody>`;
-
-    colSummary.forEach((r, idx) => {
-      html += `<tr>
-        <td class="row-index">${idx + 1}</td>
-        <td style="text-align: center; font-weight: 600;">Lajur ${r.col}</td>
-        <td style="text-align: center;">${r.total} / 27</td>
-        <td style="text-align: center; color: #166534; font-weight: 600;">${r.correct}</td>
-        <td style="text-align: center; color: ${r.error > 0 ? '#dc2626' : '#64748b'};">${r.error}</td>
-        <td style="text-align: right; padding-right: 20px;">${r.accuracy}%</td>
-      </tr>`;
-    });
-    html += `</tbody></table>`;
-    target.innerHTML = html;
-  }
-
-  function renderDiagnosticsSheet(target) {
-    const totalAttempted = logs.length;
-    const totalCorrect = logs.filter(l => l.isCorrect).length;
-    const totalError = totalAttempted - totalCorrect;
-    const accuracy = totalAttempted > 0 ? ((totalCorrect / totalAttempted) * 100).toFixed(2) : 0;
-    
-    const totals = colSummary.map(c => c.total);
-    const mean = (totals.reduce((a, b) => a + b, 0) / totals.length).toFixed(2);
-    
-    const variance = totals.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / totals.length;
-    const stdDev = Math.sqrt(variance).toFixed(2);
-
-    const firstHalf = totals.slice(0, 25).reduce((a, b) => a + b, 0) / 25;
-    const secondHalf = totals.slice(25, 50).reduce((a, b) => a + b, 0) / 25;
-    const trend = (secondHalf - firstHalf).toFixed(2);
-
-    let html = `<table class="excel-grid"><thead><tr>
-      <th class="row-index"></th>
-      <th>A (Parameter Dimensi)</th>
-      <th>B (Hasil Kalkulasi)</th>
-      <th>C (Satuan / Norma)</th>
-      <th>D (Keterangan Analisis)</th>
-    </tr></thead><tbody>
-      <tr><td class="row-index">1</td><td><strong>Tempo Kerja (Kecepatan)</strong></td><td style="text-align:center; font-weight:700;">${mean}</td><td>soal / lajur</td><td>Rata-rata output kerja per interval ${CONFIG.intervalSec} detik (Maks: 27)</td></tr>
-      <tr><td class="row-index">2</td><td><strong>Ketelitian Kerja</strong></td><td style="text-align:center; font-weight:700;">${accuracy}%</td><td>persen akurasi</td><td>Total salah: ${totalError} dari ${totalAttempted} jawaban</td></tr>
-      <tr><td class="row-index">3</td><td><strong>Kestabilan Ritme (Deviasi)</strong></td><td style="text-align:center; font-weight:700;">${stdDev}</td><td>standar deviasi (SD)</td><td>Semakin kecil nilai SD, semakin konsisten ritme pengerjaan</td></tr>
-      <tr><td class="row-index">4</td><td><strong>Ketahanan Kerja (Daya Tahan)</strong></td><td style="text-align:center; font-weight:700;">${trend >= 0 ? '+' + trend : trend}</td><td>delta selisih output</td><td>Perbandingan paruh akhir (lajur 26-50) vs paruh awal (1-25)</td></tr>
-      <tr><td class="row-index">5</td><td><strong>Total Soal Selesai</strong></td><td style="text-align:center; font-weight:700;">${totalAttempted}</td><td>item terjawab</td><td>Maksimal absolut tes: 1.350 item (50 lajur x 27 operasi)</td></tr>
-    </tbody></table>`;
-    target.innerHTML = html;
-  }
-
-  function renderTelemetrySheet(target) {
-    let html = `<table class="excel-grid"><thead><tr>
-      <th class="row-index"></th>
-      <th>A (Kode Soal)</th>
-      <th>B (Angka 1)</th>
-      <th>C (Angka 2)</th>
-      <th>D (Kunci)</th>
-      <th>E (Input)</th>
-      <th>F (Status)</th>
-      <th>G (Reaksi ms)</th>
-    </tr></thead><tbody>`;
-
-    logs.slice(0, 150).forEach((l, idx) => {
-      html += `<tr>
-        <td class="row-index">${idx + 1}</td>
-        <td style="text-align: center; font-weight:600;">${l.opCode}</td>
-        <td style="text-align: center;">${l.num1}</td>
-        <td style="text-align: center;">${l.num2}</td>
-        <td style="text-align: center; font-weight:600;">${l.expected}</td>
-        <td style="text-align: center; font-weight:600; color: ${l.isCorrect ? '#166534' : '#dc2626'};">${l.input}</td>
-        <td style="text-align: center;">${l.isCorrect ? 'BENAR' : 'SALAH'}</td>
-        <td style="text-align: right;">${l.rtMs} ms</td>
-      </tr>`;
-    });
-
-    if (logs.length > 150) {
-      html += `<tr><td class="row-index">...</td><td colspan="7" style="text-align: center; color: var(--muted); font-style: italic;">Menampilkan 150 baris pertama. Klik tombol "Unduh" untuk melihat seluruh log interaksi.</td></tr>`;
+  // --- ANTI-CHEAT & KEAMANAN SISTEM ---
+  document.addEventListener("visibilitychange", function() {
+    if (document.visibilityState === 'hidden' && document.getElementById("test-screen").classList.contains("active")) {
+      alert("PERINGATAN: Anda terdeteksi meninggalkan layar tes. Aktivitas ini dicatat oleh penguji.");
     }
+  });
 
-    html += `</tbody></table>`;
-    target.innerHTML = html;
-  }
+  document.addEventListener('contextmenu', event => event.preventDefault());
 
-  function renderChart() {
-    const canvas = document.getElementById("pankerChart");
-    const ctx = canvas.getContext("2d");
-    
-    canvas.width = canvas.parentElement.clientWidth - 40;
-    canvas.height = 180;
-
-    const pad = { top: 15, right: 15, bottom: 25, left: 30 };
-    const w = canvas.width - pad.left - pad.right;
-    const h = canvas.height - pad.top - pad.bottom;
-
-    const data = colSummary.map(c => c.total);
-    const maxVal = CONFIG.maxOpsPerCol; // 27
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    ctx.strokeStyle = "#cbd5e1";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(pad.left, pad.top);
-    ctx.lineTo(pad.left, pad.top + h);
-    ctx.lineTo(pad.left + w, pad.top + h);
-    ctx.stroke();
-
-    ctx.fillStyle = "#64748b";
-    ctx.font = "10px sans-serif";
-    ctx.textAlign = "right";
-    ctx.fillText("0", pad.left - 6, pad.top + h);
-    ctx.fillText("14", pad.left - 6, pad.top + (h / 2));
-    ctx.fillText("27", pad.left - 6, pad.top + 10);
-
-    if (data.length < 2) return;
-
-    const stepX = w / (data.length - 1);
-    ctx.strokeStyle = "#107c41";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-
-    data.forEach((val, i) => {
-      const x = pad.left + (i * stepX);
-      const y = pad.top + h - ((val / maxVal) * h);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-
-    data.forEach((val, i) => {
-      const x = pad.left + (i * stepX);
-      const y = pad.top + h - ((val / maxVal) * h);
-      ctx.fillStyle = "#107c41";
-      ctx.beginPath();
-      ctx.arc(x, y, 2.5, 0, Math.PI * 2);
-      ctx.fill();
-    });
-  }
-
-  function exportToCSV() {
-    let csv = "data:text/csv;charset=utf-8,";
-    csv += `Nama Peserta,${candidate.name}\n`;
-    csv += `Email Peserta,${candidate.email}\n`;
-    csv += `Total Lajur,${CONFIG.totalCols}\n`;
-    csv += `Waktu per Lajur (detik),${CONFIG.intervalSec}\n`;
-    csv += `Maksimal Operasi per Lajur,${CONFIG.maxOpsPerCol}\n\n`;
-
-    csv += "Lajur,Total Selesai/27,Benar,Salah,Akurasi (%)\n";
-    colSummary.forEach(c => {
-      csv += `${c.col},${c.total},${c.correct},${c.error},${c.accuracy}%\n`;
-    });
-
-    csv += "\n--- DETAIL INPUT TELEMETRI ---\n";
-    csv += "Lajur,Kode_Soal,Angka_1,Angka_2,Kunci,Input,Status,Waktu_Reaksi(ms)\n";
-    logs.forEach(l => {
-      csv += `${l.col},${l.opCode},${l.num1},${l.num2},${l.expected},${l.input},${l.isCorrect ? "BENAR" : "SALAH"},${l.rtMs}\n`;
-    });
-
-    const encoded = encodeURI(csv);
-    const a = document.createElement("a");
-    a.href = encoded;
-    a.download = `Kraepelin_${candidate.name.replace(/\s+/g, "_")}_${candidate.email}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }
-  // Kalau kandidat pindah tab atau buka aplikasi lain, kasih peringatan!
-document.addEventListener("visibilitychange", function() {
-  if (document.visibilityState === 'hidden') {
-    alert("PERINGATAN! Anda terdeteksi meninggalkan halaman tes. Aktivitas ini dicatat oleh sistem.");
-    // Opsional: Kamu bisa memanggil fungsi finishTest() di sini 
-    // untuk langsung mematikan tes jika mereka ketahuan pindah tab.
-  }
-});
-  // Matikan klik kanan
-document.addEventListener('contextmenu', event => event.preventDefault());
-
-// Matikan shortcut keyboard (Ctrl+C, Ctrl+V, Ctrl+P)
-document.addEventListener('keydown', function(e) {
-  if (e.ctrlKey || e.metaKey) {
-    if (e.key === 'c' || e.key === 'v' || e.key === 'p' || e.key === 's') {
-      e.preventDefault();
+  document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey || e.metaKey) {
+      if (['c', 'v', 'p', 's', 'r'].includes(e.key.toLowerCase())) {
+        e.preventDefault();
+      }
     }
-  }
-});
+  });
 </script>
 
 </body>
