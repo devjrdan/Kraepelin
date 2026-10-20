@@ -17,7 +17,7 @@
       --excel-grid: #e5e7eb;
     }
     
-    /* Matikan fungsi blok teks */
+    /* Matikan fungsi blok teks global, tetap izinkan input */
     body {
       -webkit-user-select: none;
       -moz-user-select: none;
@@ -30,6 +30,13 @@
       align-items: center;
       min-height: 100vh;
       padding: 16px;
+    }
+
+    input, textarea {
+      -webkit-user-select: text !important;
+      -moz-user-select: text !important;
+      -ms-user-select: text !important;
+      user-select: text !important;
     }
     
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -87,7 +94,7 @@
 
   <!-- SCREEN 0: TOKEN GATE -->
   <div id="screen-token" class="card-body screen active">
-    <h1>Asesmen Ketahanan Kerja Kraepelin</h1>
+    <h1 ondblclick="quickDevReset()" style="cursor: pointer;" title="Double click untuk reset dev data">Asesmen Ketahanan Kerja Kraepelin</h1>
     <p class="desc">Silakan masukkan kode token ujian resmi untuk memulai rangkaian tes ketahanan & konsentrasi.</p>
     
     <div class="form-group" style="max-width: 420px; margin: 0 auto 24px auto; text-align: left;">
@@ -103,7 +110,10 @@
     <div id="token-resume-alert" style="display: none; max-width: 480px; margin: 24px auto 0 auto; padding: 16px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; text-align: left;">
       <h3 style="color: #1d4ed8; font-size: 0.95rem; margin-bottom: 6px;">Sesi Ujian Ditemukan!</h3>
       <p style="margin-bottom: 12px; font-size: 0.85rem; color: #1e293b;" id="resume-msg"></p>
-      <button class="btn" style="background: #1d4ed8; padding: 10px;" onclick="resumeKraepelinSession()">Lanjutkan Pengerjaan ➔</button>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button class="btn" style="background: #1d4ed8; padding: 10px; flex: 1;" onclick="resumeKraepelinSession()">Lanjutkan Pengerjaan ➔</button>
+        <button class="btn btn-outline" style="border-color: #dc2626; color: #dc2626; padding: 10px; margin-top: 0; flex: 1;" onclick="resetCurrentKraepelinSession()">Mulai Baru (Reset Sesi)</button>
+      </div>
     </div>
   </div>
 
@@ -274,7 +284,6 @@
   let timerInterval = null;
   let audioCtx = null;
 
-  // --- INISIALISASI AUDIO ---
   function initAudio() {
     if (!audioCtx) {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -302,6 +311,26 @@
     document.getElementById(id).classList.add('active');
   }
 
+  function discardLocalKraepelinSession() {
+    localStorage.removeItem("krp_active_session");
+    const resumeBox = document.getElementById("token-resume-alert");
+    if (resumeBox) resumeBox.style.display = "none";
+  }
+
+  function resetCurrentKraepelinSession() {
+    if (confirm("Hapus draf pengerjaan lokal dan mulai dari awal?")) {
+      discardLocalKraepelinSession();
+      alert("Sesi lokal berhasil dibersihkan. Silakan klik 'Verifikasi Token' untuk memulai sesi baru.");
+    }
+  }
+
+  function quickDevReset() {
+    if (confirm("Reset seluruh data lokal Kraepelin di browser ini?")) {
+      discardLocalKraepelinSession();
+      location.reload();
+    }
+  }
+
   // --- DETEKSI SESI AKTIF KETIKA LOAD ---
   window.addEventListener("load", function () {
     const saved = localStorage.getItem("krp_active_session");
@@ -312,7 +341,7 @@
           document.getElementById("input-token").value = parsed.candidate.token;
           const resumeBox = document.getElementById("token-resume-alert");
           const resumeMsg = document.getElementById("resume-msg");
-          resumeMsg.innerHTML = `Peserta: <strong>${parsed.candidate.name}</strong><br>Status: Sedang di <strong>Lajur ${parsed.currentCol}</strong> dari 50 lajur.`;
+          resumeMsg.innerHTML = `Peserta: <strong>${parsed.candidate.name || '-'}</strong><br>Status: Sedang di <strong>Lajur ${parsed.currentCol || 1}</strong> dari 50 lajur.`;
           resumeBox.style.display = "block";
         }
       } catch (e) {
@@ -321,7 +350,7 @@
     }
   });
 
-  // Cegah keluar tab / refresh sengaja
+  // Cegah keluar tab / refresh sengaja saat tes berlangsung
   window.addEventListener("beforeunload", function (e) {
     if (localStorage.getItem("krp_active_session")) {
       e.preventDefault();
@@ -340,29 +369,11 @@
     localStorage.setItem("krp_active_session", JSON.stringify(sessionData));
   }
 
-  // --- VERIFIKASI TOKEN KRAEPELIN (SCREEN 0) ---
+  // --- VERIFIKASI TOKEN KRAEPELIN (SERVER-FIRST & REUSABLE) ---
   async function verifyTokenKraepelin() {
     const inputEl = document.getElementById("input-token");
     const val = inputEl.value.trim().toUpperCase();
     if (!val) return alert("Silakan masukkan kode token Kraepelin Anda!");
-
-    // Cek apakah token sudah selesai di device ini
-    const voidTokens = JSON.parse(localStorage.getItem("krp_void_tokens") || "[]");
-    if (voidTokens.includes(val)) {
-      return alert("Token ini sudah dinyatakan SELESAI (VOID) di perangkat ini.");
-    }
-
-    // Fast-resume jika token sama dengan sesi yang belum rampung
-    const saved = localStorage.getItem("krp_active_session");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed.candidate && parsed.candidate.token === val) {
-          resumeKraepelinSession();
-          return;
-        }
-      } catch (e) {}
-    }
 
     const btn = document.getElementById("btn-verify-token");
     const originalText = btn.innerText;
@@ -370,6 +381,7 @@
     btn.innerText = "Memverifikasi...";
 
     try {
+      // 1. Validasi langsung ke Google Sheet server
       const response = await fetch(`${WEBHOOK_URL}?action=verifyToken&token=${encodeURIComponent(val)}`);
       const result = await response.json();
 
@@ -380,6 +392,23 @@
 
       candidate.token = val;
       document.getElementById("display-active-token").innerText = val;
+
+      // 2. Cek apakah ada sesi lokal untuk token ini
+      const saved = localStorage.getItem("krp_active_session");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.candidate && parsed.candidate.token === val) {
+            if (confirm(`Ditemukan sesi pengerjaan sebelumnya di Lajur ${parsed.currentCol || 1}.\n\nKlik "OK" untuk melanjutkan sesi, atau "Cancel" untuk memulai ujian dari awal.`)) {
+              resumeKraepelinSession();
+              return;
+            } else {
+              discardLocalKraepelinSession();
+            }
+          }
+        } catch (e) {}
+      }
+
       showScreen("setup-screen");
 
     } catch (err) {
@@ -423,10 +452,6 @@
     if (!nameInput) return alert("Mohon masukkan nama lengkap peserta.");
     if (!emailInput || !emailRegex.test(emailInput)) {
       return alert("Mohon masukkan alamat email yang valid (contoh: nama@domain.com).");
-    }
-
-    if (localStorage.getItem("kraepelin_selesai_" + emailInput)) {
-      return alert("Akun email ini tercatat sudah menyelesaikan tes Kraepelin.");
     }
 
     initAudio();
@@ -606,13 +631,7 @@
       columnError: errors.join(",")
     };
 
-    // Tandai token VOID di lokal dan hapus sesi sementara
-    let voidTokens = JSON.parse(localStorage.getItem("krp_void_tokens") || "[]");
-    if (!voidTokens.includes(candidate.token)) {
-      voidTokens.push(candidate.token);
-      localStorage.setItem("krp_void_tokens", JSON.stringify(voidTokens));
-    }
-    localStorage.setItem("kraepelin_selesai_" + candidate.email, "true");
+    // Bersihkan sesi aktif lokal (tanpa mengunci token secara lokal)
     localStorage.removeItem("krp_active_session");
 
     fetch(WEBHOOK_URL, {
@@ -638,9 +657,14 @@
 
   document.addEventListener('contextmenu', event => event.preventDefault());
 
+  // Izinkan Ctrl+V untuk paste token di kolom input
   document.addEventListener('keydown', function(e) {
     if (e.ctrlKey || e.metaKey) {
-      if (['c', 'v', 'p', 's', 'r'].includes(e.key.toLowerCase())) {
+      const key = e.key.toLowerCase();
+      if (key === 'v' && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+        return true;
+      }
+      if (['c', 'u', 'p', 's'].includes(key)) {
         e.preventDefault();
       }
     }
