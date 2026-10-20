@@ -115,7 +115,7 @@
     .btn-outline { background: white; color: var(--text); border: 1px solid var(--border); }
     .btn-outline:hover { background: #f1f5f9; }
 
-    /* HUD & Tampilan Penjumlahan Kraepelin */
+    /* HUD Kraepelin */
     .test-hud {
       display: flex;
       justify-content: space-between;
@@ -140,59 +140,42 @@
       height: 100%;
       width: 100%;
       background: var(--primary);
-      transition: width 0.1s linear;
+      transition: width 0.05s linear;
     }
 
-    .math-stage {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      background: #ffffff;
+    .flash-banner { height: 26px; font-size: 1.15rem; font-weight: 800; color: #dc2626; margin-bottom: 8px; text-align: center; }
+    .op-tag { display: inline-block; background: #f1f5f9; border: 1px solid var(--border); border-radius: 4px; padding: 3px 10px; font-size: 0.85rem; font-weight: 700; color: var(--primary); margin-bottom: 12px; }
+
+    .number-stage {
+      background: #f8fafc;
       border: 2px solid var(--border);
-      border-radius: 12px;
-      max-width: 320px;
+      border-radius: 16px;
+      width: 150px;
       margin: 0 auto 24px auto;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-    }
-    .math-num { font-size: 3.2rem; font-weight: 800; color: var(--text); line-height: 1.1; font-family: monospace; }
-    .math-divider { width: 140px; height: 3px; background: var(--primary); margin: 12px 0; }
-    .math-input-box {
-      width: 80px;
-      height: 60px;
-      border: 2px solid var(--primary);
-      border-radius: 8px;
-      font-size: 2.2rem;
+      padding: 20px;
       text-align: center;
-      font-weight: 800;
-      font-family: monospace;
-      color: var(--primary-dark);
-      outline: none;
-      background: #f0fdf4;
-      caret-color: transparent;
     }
+    .digit { font-size: 3.5rem; font-weight: 800; line-height: 1; color: var(--text); }
+    .plus-sign { font-size: 1.6rem; font-weight: 700; color: var(--muted); margin: 6px 0; }
 
-    /* Keypad Digital untuk Pengguna Mobile / Tablet */
-    .keypad-grid {
+    .keypad {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 8px;
-      max-width: 340px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      max-width: 280px;
       margin: 0 auto;
     }
-    .btn-key {
-      padding: 14px 0;
-      font-size: 1.3rem;
-      font-weight: 700;
-      background: #ffffff;
+    .key {
+      background: #fff;
       border: 1px solid var(--border);
       border-radius: 8px;
+      font-size: 1.4rem;
+      font-weight: 700;
+      padding: 14px;
       cursor: pointer;
-      transition: background 0.15s;
+      user-select: none;
     }
-    .btn-key:hover { background: #f1f5f9; }
-    .btn-key:active { background: #e2e8f0; }
+    .key:active { background: #e2e8f0; }
 
     .msg-err { 
       background: var(--err-soft); 
@@ -204,41 +187,12 @@
       font-weight: 600; 
       font-size: 0.92rem; 
     }
-
-    /* Anti-Cheat Warning Modal */
-    #strike-modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.75);
-      z-index: 9999999;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-    .modal-box {
-      background: #ffffff;
-      border-radius: 12px;
-      max-width: 440px;
-      width: 100%;
-      padding: 28px 24px;
-      text-align: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-    }
   </style>
 </head>
 <body>
 
-<div id="strike-modal">
-  <div class="modal-box">
-    <div style="font-size: 2.8rem; margin-bottom: 8px;">⚠️</div>
-    <h3 id="strike-title" style="color: var(--err); font-size: 1.25rem; margin-bottom: 10px; font-weight: 800;">PERINGATAN KEAMANAN (1/3)</h3>
-    <p id="strike-desc" style="color: #475569; font-size: 0.95rem; line-height: 1.6; margin-bottom: 24px;"></p>
-    <button class="btn" style="background: var(--err); width: 100%;" id="btn-strike-ack">Saya Mengerti & Lanjutkan</button>
-  </div>
-</div>
-
 <div class="container">
+
   <div class="header">
     <h2 id="header-title" ondblclick="quickDevReset()" style="cursor: pointer;" title="Double click untuk reset dev data">Asesmen Kraepelin</h2>
     <div class="timer-badge" id="timer-display">15s</div>
@@ -247,18 +201,21 @@
   <!-- SCREEN 0: TOKEN GATE -->
   <div id="screen-token" class="card-body screen active">
     <h1>Selamat Datang di Asesmen Kraepelin</h1>
-    <p class="desc">Silakan masukkan kode token resmi yang telah diberikan oleh penguji untuk mengakses tes ketahanan kerja Kraepelin.</p>
+    <p class="desc">Silakan masukkan kode token ujian resmi untuk memulai rangkaian tes ketahanan & konsentrasi.</p>
     
-    <div class="form-group" style="max-width: 420px; margin-bottom: 24px;">
+    <div class="form-group" style="max-width: 420px; margin: 0 auto 24px auto; text-align: left;">
       <label>Kode Token Asesmen</label>
-      <input type="text" id="input-token" placeholder="Contoh: KRP-8X9Y2Z" style="text-transform: uppercase; font-weight: 700; letter-spacing: 1.5px;" autocomplete="off" required>
+      <input type="text" id="input-token" placeholder="Contoh: KRP-8X9Y2Z" style="text-transform: uppercase; font-weight: 700; letter-spacing: 1.5px; text-align: center;" autocomplete="off" required>
+    </div>
+    
+    <div style="max-width: 420px; margin: 0 auto;">
+      <button class="btn" id="btn-verify-token" onclick="verifyTokenKraepelin()">Verifikasi Token ➔</button>
     </div>
 
-    <button class="btn" id="btn-verify-token" onclick="verifyTokenKraepelin()">Verifikasi Token ➔</button>
-
-    <div id="token-resume-alert" style="display: none; margin-top: 24px; padding: 18px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;">
-      <h3 style="color: var(--primary); font-size: 1rem; margin-bottom: 6px;">Sesi Pengerjaan Ditemukan!</h3>
-      <p id="resume-msg" style="margin-bottom: 14px; font-size: 0.92rem; color: #1e293b;"></p>
+    <!-- Resume Box Tanpa Tombol Reset Cheat -->
+    <div id="token-resume-alert" style="display: none; max-width: 480px; margin: 24px auto 0 auto; padding: 16px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; text-align: left;">
+      <h3 style="color: var(--primary); font-size: 0.95rem; margin-bottom: 6px;">Sesi Ujian Ditemukan!</h3>
+      <p style="margin-bottom: 12px; font-size: 0.85rem; color: #1e293b;" id="resume-msg"></p>
       <button class="btn" style="width: 100%;" onclick="resumeKraepelinSession()">Lanjutkan Pengerjaan ➔</button>
     </div>
   </div>
@@ -268,7 +225,7 @@
     <h1>Data Diri Peserta</h1>
     <p class="desc">Token Terverifikasi: <strong id="display-active-token" style="color: var(--primary);"></strong>. Lengkapi data diri Anda sebelum melanjutkan ke lembar instruksi.</p>
 
-    <div class="card" style="max-width: 620px;">
+    <div class="card" style="max-width: 620px; margin: 0 auto 20px auto;">
       <div class="form-group">
         <label for="nameInput">Nama Lengkap Kandidat *</label>
         <input type="text" id="nameInput" placeholder="Masukkan nama lengkap sesuai KTP" required autocomplete="off">
@@ -298,18 +255,20 @@
       </div>
     </div>
 
-    <div id="profileErrBox" class="msg-err" hidden></div>
+    <div id="profileErrBox" class="msg-err" style="max-width: 620px; margin: 0 auto 16px auto;" hidden></div>
 
-    <button class="btn" onclick="goToInstructions()">Lanjut ke Petunjuk Pengerjaan ➔</button>
+    <div style="max-width: 620px; margin: 0 auto;">
+      <button class="btn" onclick="goToInstructions()">Lanjut ke Petunjuk Pengerjaan ➔</button>
+    </div>
   </div>
 
-  <!-- SCREEN 2: PETUNJUK PENGERJAAN & SIMULASI -->
-  <div id="screen-instructions" class="card-body screen">
+  <!-- SCREEN 2: PETUNJUK PENGERJAAN -->
+  <div id="setup-screen" class="card-body screen">
     <h1>Petunjuk Pengerjaan Kraepelin</h1>
     <p class="desc">
       Jumlahkan 2 angka yang tersusun vertikal dari <strong>bawah ke atas</strong>.<br>
-      Ketikkan <strong>hanya digit satuan</strong> (contoh: 4 + 9 = 13, ketik <strong>3</strong>; 9 + 2 = 11, ketik <strong>1</strong>; 3 + 4 = 7, ketik <strong>7</strong>).<br>
-      Sistem akan otomatis berpindah ke lajur berikutnya setiap 15 detik.
+      Ketikkan <strong>hanya digit satuan</strong> (contoh: 4 + 9 = 13, ketik <strong>3</strong>; 9 + 2 = 11, ketik <strong>1</strong>).<br>
+      Layar otomatis berpindah ke lajur berikutnya setiap 15 detik.
     </p>
 
     <div class="config-grid">
@@ -318,8 +277,8 @@
         <strong>50 Lajur</strong>
       </div>
       <div class="config-card">
-        <span>Kapasitas Operasi</span>
-        <strong>27 Penjumlahan</strong>
+        <span>Maksimal Operasi</span>
+        <strong>27 Operasi/Lajur</strong>
       </div>
       <div class="config-card">
         <span>Waktu per Lajur</span>
@@ -327,78 +286,160 @@
       </div>
     </div>
 
-    <div style="display: flex; gap: 12px;">
-      <button class="btn btn-outline" onclick="backToProfile()">← Ubah Data Diri</button>
-      <button class="btn" onclick="startKraepelinTest()">Mulai Tes Kraepelin 🚀</button>
+    <div style="display: flex; gap: 12px; max-width: 480px; margin: 0 auto;">
+      <button class="btn btn-outline" style="flex: 1;" onclick="backToProfile()">← Ubah Data Diri</button>
+      <button class="btn" style="flex: 1;" onclick="startTest()">Mulai Pengerjaan 🚀</button>
     </div>
   </div>
 
-  <!-- SCREEN 3: TEST RUNTIME -->
-  <div id="screen-test" class="card-body screen">
+  <!-- SCREEN 3: RUNTIME TEST SCREEN -->
+  <div id="test-screen" class="screen" style="padding: 32px; text-align: center;">
     <div class="test-hud">
       <span id="hud-col">Lajur: 1 / 50</span>
-      <span id="hud-op">Operasi: 1 / 27</span>
-      <span id="hud-timer">Sisa: 15s</span>
+      <span id="hud-row">Operasi: 1 / 27</span>
+      <span id="hud-timer">Waktu: 15s</span>
     </div>
 
     <div class="progress-bar-bg">
       <div class="progress-bar-fill" id="interval-progress"></div>
     </div>
 
-    <div class="math-stage">
-      <div class="math-num" id="num-top">7</div>
-      <div class="math-divider"></div>
-      <div class="math-num" id="num-bottom">8</div>
-      <div style="margin-top: 16px;">
-        <input type="text" id="math-input" class="math-input-box" maxlength="1" readonly>
-      </div>
+    <div class="flash-banner" id="flash-banner"></div>
+    <div><span class="op-tag" id="op-label">Soal 1a</span></div>
+
+    <div class="number-stage">
+      <div class="digit" id="num-top">0</div>
+      <div class="plus-sign">+</div>
+      <div class="digit" id="num-bottom">0</div>
     </div>
 
-    <!-- Keypad Layar Sentuh -->
-    <div class="keypad-grid">
-      <button class="btn-key" onclick="handleDigitInput(1)">1</button>
-      <button class="btn-key" onclick="handleDigitInput(2)">2</button>
-      <button class="btn-key" onclick="handleDigitInput(3)">3</button>
-      <button class="btn-key" onclick="handleDigitInput(4)">4</button>
-      <button class="btn-key" onclick="handleDigitInput(5)">5</button>
-      <button class="btn-key" onclick="handleDigitInput(6)">6</button>
-      <button class="btn-key" onclick="handleDigitInput(7)">7</button>
-      <button class="btn-key" onclick="handleDigitInput(8)">8</button>
-      <button class="btn-key" onclick="handleDigitInput(9)">9</button>
-      <button class="btn-key" onclick="handleDigitInput(0)">0</button>
+    <div class="keypad">
+      <button class="key" onclick="handleInput(1)">1</button>
+      <button class="key" onclick="handleInput(2)">2</button>
+      <button class="key" onclick="handleInput(3)">3</button>
+      <button class="key" onclick="handleInput(4)">4</button>
+      <button class="key" onclick="handleInput(5)">5</button>
+      <button class="key" onclick="handleInput(6)">6</button>
+      <button class="key" onclick="handleInput(7)">7</button>
+      <button class="key" onclick="handleInput(8)">8</button>
+      <button class="key" onclick="handleInput(9)">9</button>
+      <div></div>
+      <button class="key" onclick="handleInput(0)">0</button>
+      <div></div>
     </div>
   </div>
 
   <!-- SCREEN 4: FINISH SCREEN -->
-  <div id="screen-finish" class="card-body screen" style="text-align: center; padding: 48px 16px;">
-    <h1>Asesmen Kraepelin Selesai</h1>
-    <p id="finish-msg" class="desc" style="max-width: 520px; margin: 0 auto 24px auto;">Mengirimkan hasil penilaian ke server penguji...</p>
+  <div id="finish-screen" class="screen" style="padding: 48px 32px; text-align: center;">
+    <h2 style="color: var(--primary); margin-bottom: 12px; font-size: 1.6rem;">Asesmen Kraepelin Selesai</h2>
+    <p id="finish-msg" style="color: var(--muted); font-size: 0.95rem; line-height: 1.6; max-width: 500px; margin: 0 auto 24px auto;">
+      Menyinkronkan hasil asesmen ke server penguji...
+    </p>
+    <div id="session-metadata" style="font-size: 0.85rem; color: #94a3b8;"></div>
   </div>
+
 </div>
 
 <script>
-  // Tempel URL Web App Google Apps Script Kraepelin Anda di sini (/exec)
+  // 50 LAJUR DARI EXCEL KRAEPELIN BAKU (URUTAN ASLI PERSIS DARI INDEX 7)
+  const KRAEPELIN_EXCEL_DATA = [
+    [4, 9, 2, 7, 4, 6, 8, 9, 2, 9, 5, 6, 2, 2, 8, 1, 1, 2, 2, 9, 6, 6, 4, 7, 9, 7, 7, 2],
+    [3, 8, 1, 6, 1, 7, 5, 8, 6, 2, 4, 6, 5, 9, 2, 5, 3, 6, 3, 5, 9, 1, 7, 6, 9, 6, 5, 7],
+    [5, 5, 5, 7, 5, 6, 8, 1, 9, 5, 7, 5, 8, 4, 2, 1, 1, 9, 8, 9, 6, 3, 2, 3, 9, 1, 5, 1],
+    [5, 6, 4, 2, 8, 8, 7, 5, 3, 5, 7, 8, 7, 4, 8, 8, 7, 6, 2, 3, 7, 7, 6, 5, 2, 4, 3, 2],
+    [1, 3, 1, 6, 9, 9, 3, 2, 5, 8, 7, 3, 7, 2, 6, 7, 1, 4, 6, 4, 8, 7, 2, 1, 5, 2, 6, 3],
+    [7, 1, 7, 3, 7, 8, 5, 6, 2, 9, 6, 8, 6, 7, 8, 4, 7, 8, 3, 5, 9, 6, 8, 7, 1, 9, 8, 6],
+    [5, 7, 1, 6, 6, 4, 6, 9, 4, 5, 5, 3, 5, 9, 2, 7, 7, 8, 7, 9, 4, 4, 7, 2, 5, 8, 4, 5],
+    [1, 1, 9, 7, 7, 4, 4, 2, 5, 3, 3, 6, 2, 6, 6, 8, 8, 7, 9, 4, 5, 1, 5, 1, 8, 8, 5, 5],
+    [6, 1, 4, 4, 3, 1, 6, 9, 1, 7, 7, 5, 8, 2, 6, 7, 9, 1, 1, 4, 3, 2, 5, 2, 6, 5, 7, 7],
+    [5, 3, 9, 1, 4, 7, 8, 6, 9, 4, 1, 3, 6, 3, 2, 7, 5, 3, 2, 5, 4, 5, 6, 4, 9, 9, 1, 9],
+    [4, 5, 5, 5, 3, 8, 9, 4, 8, 5, 8, 8, 4, 7, 1, 5, 4, 3, 9, 5, 4, 3, 4, 8, 3, 7, 9, 9],
+    [7, 9, 8, 6, 6, 2, 6, 3, 2, 7, 7, 9, 9, 3, 3, 2, 7, 8, 5, 5, 2, 1, 9, 3, 7, 6, 9, 4],
+    [3, 1, 7, 8, 9, 4, 2, 5, 7, 3, 5, 4, 6, 2, 3, 6, 3, 8, 6, 8, 9, 5, 3, 8, 6, 3, 2, 4],
+    [3, 5, 2, 7, 2, 2, 4, 8, 3, 3, 9, 9, 1, 1, 4, 6, 9, 2, 5, 5, 9, 5, 8, 9, 9, 2, 3, 3],
+    [2, 1, 5, 5, 5, 4, 8, 6, 2, 1, 4, 9, 8, 8, 8, 5, 9, 5, 4, 5, 3, 8, 9, 3, 5, 9, 7, 4],
+    [2, 7, 4, 2, 6, 3, 7, 6, 4, 8, 1, 4, 8, 7, 3, 9, 5, 2, 6, 6, 3, 9, 9, 3, 8, 1, 9, 5],
+    [2, 8, 1, 3, 7, 1, 9, 4, 9, 2, 7, 9, 4, 5, 6, 7, 7, 6, 7, 6, 5, 5, 3, 2, 8, 6, 4, 7],
+    [3, 4, 8, 3, 1, 7, 4, 5, 9, 6, 5, 4, 2, 3, 3, 5, 7, 5, 7, 3, 3, 8, 3, 9, 3, 1, 6, 8],
+    [6, 7, 1, 7, 6, 4, 2, 9, 4, 6, 6, 3, 5, 2, 8, 4, 9, 1, 9, 1, 7, 9, 4, 2, 7, 1, 1, 2],
+    [2, 7, 9, 5, 3, 4, 5, 5, 5, 9, 1, 6, 4, 1, 5, 8, 7, 7, 4, 5, 7, 8, 8, 1, 7, 4, 8, 6],
+    [9, 4, 2, 9, 8, 2, 2, 1, 7, 1, 9, 4, 2, 7, 9, 3, 6, 9, 1, 7, 4, 7, 5, 6, 1, 2, 1, 9],
+    [9, 4, 2, 9, 8, 2, 2, 1, 7, 1, 9, 4, 2, 7, 9, 3, 6, 9, 1, 7, 4, 7, 5, 6, 1, 2, 1, 9],
+    [4, 4, 9, 1, 9, 1, 6, 8, 6, 2, 2, 1, 4, 4, 3, 2, 9, 6, 3, 8, 6, 2, 2, 2, 9, 9, 2, 5],
+    [1, 2, 4, 7, 6, 9, 5, 1, 3, 8, 7, 6, 5, 7, 9, 7, 4, 2, 4, 1, 9, 1, 4, 8, 7, 4, 5, 9],
+    [2, 7, 3, 7, 6, 1, 4, 5, 6, 7, 3, 2, 7, 3, 9, 9, 2, 8, 7, 7, 1, 5, 2, 2, 6, 5, 3, 3],
+    [1, 8, 1, 4, 1, 3, 6, 9, 5, 9, 5, 9, 5, 3, 9, 5, 5, 6, 2, 6, 2, 3, 1, 2, 1, 4, 7, 2],
+    [6, 7, 3, 8, 4, 9, 4, 7, 1, 3, 7, 9, 6, 2, 8, 7, 7, 9, 1, 7, 8, 5, 9, 2, 1, 5, 6, 1],
+    [7, 5, 6, 5, 8, 4, 9, 5, 4, 7, 1, 2, 5, 9, 4, 2, 9, 4, 6, 5, 1, 3, 7, 2, 4, 7, 2, 3],
+    [3, 3, 2, 5, 7, 3, 4, 8, 4, 5, 7, 9, 4, 7, 7, 3, 6, 5, 2, 3, 2, 7, 7, 1, 7, 3, 1, 8],
+    [2, 9, 2, 3, 7, 8, 2, 4, 9, 5, 3, 4, 9, 6, 5, 6, 5, 1, 3, 6, 4, 6, 8, 6, 4, 3, 9, 5],
+    [3, 8, 2, 1, 3, 2, 1, 5, 2, 6, 5, 7, 1, 7, 9, 8, 8, 7, 4, 6, 5, 1, 7, 6, 2, 6, 6, 6],
+    [3, 7, 9, 3, 3, 8, 6, 1, 9, 9, 3, 1, 3, 1, 4, 7, 4, 2, 9, 7, 3, 7, 8, 2, 7, 6, 3, 9],
+    [1, 4, 2, 9, 9, 4, 1, 7, 3, 9, 3, 8, 7, 1, 3, 2, 2, 8, 1, 4, 1, 9, 6, 1, 6, 5, 7, 3],
+    [6, 9, 3, 3, 5, 8, 6, 6, 7, 1, 9, 9, 5, 1, 3, 4, 9, 3, 1, 4, 4, 1, 3, 3, 7, 7, 4, 8],
+    [8, 6, 9, 4, 9, 7, 3, 2, 1, 5, 2, 4, 4, 4, 7, 8, 3, 2, 6, 6, 3, 7, 6, 7, 9, 1, 5, 3],
+    [1, 2, 6, 9, 3, 8, 2, 9, 6, 8, 9, 6, 5, 2, 2, 5, 5, 7, 6, 8, 5, 6, 8, 1, 1, 1, 2, 4],
+    [1, 2, 3, 6, 9, 3, 8, 2, 9, 6, 8, 9, 6, 5, 2, 2, 5, 7, 6, 8, 5, 6, 8, 1, 1, 1, 2, 4],
+    [4, 1, 3, 4, 5, 4, 3, 5, 2, 7, 4, 1, 7, 6, 3, 1, 9, 1, 5, 1, 7, 1, 5, 8, 3, 2, 9, 1],
+    [9, 9, 2, 6, 6, 6, 4, 6, 3, 4, 2, 2, 4, 7, 4, 2, 6, 5, 2, 1, 7, 6, 7, 3, 7, 3, 9, 7],
+    [7, 4, 3, 7, 4, 2, 9, 1, 7, 5, 5, 8, 7, 8, 1, 1, 5, 2, 4, 2, 2, 8, 4, 4, 3, 7, 4, 3],
+    [2, 5, 7, 6, 3, 4, 8, 3, 9, 3, 3, 4, 9, 9, 1, 9, 5, 5, 7, 5, 9, 8, 5, 9, 7, 4, 2, 4],
+    [1, 6, 8, 4, 3, 8, 3, 2, 1, 2, 7, 5, 5, 6, 3, 5, 2, 3, 3, 3, 6, 2, 2, 8, 4, 6, 2, 1],
+    [6, 9, 1, 4, 6, 1, 2, 3, 9, 3, 5, 8, 7, 3, 2, 4, 1, 3, 3, 1, 7, 8, 9, 1, 4, 5, 1, 2],
+    [4, 3, 3, 4, 8, 6, 6, 3, 4, 5, 8, 5, 1, 4, 2, 2, 2, 5, 9, 2, 7, 7, 1, 8, 1, 2, 4, 7],
+    [4, 7, 2, 3, 8, 7, 7, 5, 2, 9, 8, 8, 6, 2, 2, 3, 4, 3, 1, 5, 2, 8, 6, 6, 7, 8, 4, 7],
+    [1, 8, 4, 4, 2, 3, 4, 9, 5, 3, 2, 5, 4, 2, 6, 3, 6, 1, 8, 5, 8, 7, 1, 5, 5, 9, 3, 1],
+    [7, 4, 2, 4, 9, 4, 6, 3, 3, 7, 3, 7, 8, 3, 7, 3, 8, 6, 2, 4, 8, 7, 6, 7, 4, 2, 4, 8],
+    [1, 8, 1, 4, 1, 3, 6, 9, 5, 9, 5, 9, 5, 3, 9, 5, 5, 6, 2, 6, 2, 3, 1, 9, 9, 3, 2, 7],
+    [1, 6, 2, 9, 5, 7, 1, 9, 8, 6, 3, 9, 9, 8, 6, 1, 8, 6, 2, 2, 4, 7, 5, 4, 4, 7, 5, 9],
+    [2, 6, 6, 8, 7, 6, 5, 6, 2, 4, 5, 9, 4, 4, 8, 3, 2, 5, 7, 2, 7, 5, 3, 3, 1, 9, 1, 5]
+  ];
+
   const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbySJnc-BgPuHAhwCFPUL58lEJwEHuguRmNS3qittniH-l-8DCFcXfjFDCbENwe7SEF4/exec";
-  const TOTAL_COLUMNS = 50;
-  const OPS_PER_COLUMN = 27;
-  const SECONDS_PER_COLUMN = 15;
-  const STORAGE_KEY = "krp_active_session";
 
-  let activeToken = "";
-  let candidateData = {};
-  let currentColumn = 0;
-  let currentOp = 0;
-  let secondsRemaining = SECONDS_PER_COLUMN;
+  const CONFIG = {
+    totalCols: 50,
+    intervalSec: 15,
+    maxOpsPerCol: 27
+  };
+
+  let candidate = { token: "", name: "", email: "", nohp: "", posisi: "", gender: "" };
+  let current = {
+    col: 1,
+    op: 1,
+    topNum: 0,
+    bottomNum: 0,
+    colStartTime: 0,
+    lastInputTime: 0,
+    colAnswers: []
+  };
+
+  let logs = [];
+  let colSummary = [];
   let timerInterval = null;
-  let isTestRunning = false;
+  let audioCtx = null;
 
-  // Struktur data rekap 50 lajur
-  let columnsData = [];
-  let colSummary = []; // { total, correct, error, skipped }
+  function initAudio() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  }
 
-  let cheatStrikes = 0;
-  const MAX_STRIKES = 3;
-  let isStrikeCooldown = false;
+  function playChime() {
+    if (!audioCtx) return;
+    try {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.2);
+    } catch(e) {}
+  }
 
   function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -406,22 +447,61 @@
   }
 
   function quickDevReset() {
-    if (confirm("Reset seluruh data lokal sesi Kraepelin di browser ini?")) {
-      localStorage.removeItem(STORAGE_KEY);
+    if (confirm("Reset seluruh data lokal Kraepelin di browser ini?")) {
+      localStorage.removeItem("krp_active_session");
       location.reload();
     }
   }
 
-  /* 1. Verifikasi Token Server-First (Reusable & Bebas Gembok Lokal) */
-  async function verifyTokenKraepelin() {
-    const val = document.getElementById("input-token").value.trim().toUpperCase();
-    if (!val) return alert("Silakan masukkan kode token Kraepelin Anda!");
-
-    const saved = localStorage.getItem(STORAGE_KEY);
+  // DETEKSI SESI AKTIF KETIKA LOAD
+  window.addEventListener("load", function () {
+    const saved = localStorage.getItem("krp_active_session");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed.token === val) {
+        if (parsed.candidate && parsed.candidate.token) {
+          document.getElementById("input-token").value = parsed.candidate.token;
+          const resumeBox = document.getElementById("token-resume-alert");
+          const resumeMsg = document.getElementById("resume-msg");
+          resumeMsg.innerHTML = `Peserta: <strong>${parsed.candidate.name || '-'}</strong><br>Status: Sedang di <strong>Lajur ${parsed.currentCol || 1}</strong> dari 50 lajur.`;
+          resumeBox.style.display = "block";
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  });
+
+  window.addEventListener("beforeunload", function (e) {
+    if (localStorage.getItem("krp_active_session")) {
+      e.preventDefault();
+      e.returnValue = "Tes Kraepelin sedang berlangsung! Sesi pengerjaan Anda akan disimpan.";
+    }
+  });
+
+  function saveKraepelinSession() {
+    if (!candidate.token) return;
+    const sessionData = {
+      candidate: candidate,
+      currentCol: current.col,
+      logs: logs,
+      colSummary: colSummary
+    };
+    localStorage.setItem("krp_active_session", JSON.stringify(sessionData));
+  }
+
+  // 1. VERIFIKASI TOKEN (STRICT FAST-RESUME, NO CONFIRM RESET)
+  async function verifyTokenKraepelin() {
+    const inputEl = document.getElementById("input-token");
+    const val = inputEl.value.trim().toUpperCase();
+    if (!val) return alert("Silakan masukkan kode token Kraepelin Anda!");
+
+    // Fast-resume jika sesi lokal untuk token ini sedang aktif
+    const saved = localStorage.getItem("krp_active_session");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.candidate && parsed.candidate.token === val) {
           resumeKraepelinSession();
           return;
         }
@@ -429,33 +509,51 @@
     }
 
     const btn = document.getElementById("btn-verify-token");
-    const orig = btn.innerText;
+    const originalText = btn.innerText;
     btn.disabled = true;
     btn.innerText = "Memverifikasi...";
 
     try {
-      const res = await fetch(`${WEBHOOK_URL}?action=verifyToken&token=${encodeURIComponent(val)}`);
-      const result = await res.json();
+      const response = await fetch(`${WEBHOOK_URL}?action=verifyToken&token=${encodeURIComponent(val)}`);
+      const result = await response.json();
 
       if (!result.valid) {
         alert(result.message || "Token tidak valid!");
         return;
       }
 
-      activeToken = val;
-      document.getElementById("display-active-token").innerText = activeToken;
+      candidate.token = val;
+      document.getElementById("display-active-token").innerText = val;
       showScreen("screen-profile");
 
     } catch (err) {
       console.error(err);
-      alert("Gagal menghubungi server database token. Pastikan internet aktif.");
+      alert("Gagal menghubungi server verifikasi. Periksa koneksi internet Anda.");
     } finally {
       btn.disabled = false;
-      btn.innerText = orig;
+      btn.innerText = originalText;
     }
   }
 
-  /* 2. Form Data Diri */
+  function resumeKraepelinSession() {
+    const saved = localStorage.getItem("krp_active_session");
+    if (!saved) return;
+    const parsed = JSON.parse(saved);
+
+    candidate = parsed.candidate;
+    current.col = parsed.currentCol || 1;
+    logs = parsed.logs || [];
+    colSummary = parsed.colSummary || [];
+
+    alert(`Selamat datang kembali, ${candidate.name}! Melanjutkan tes Kraepelin dari lajur ${current.col}.`);
+
+    initAudio();
+    showScreen("test-screen");
+    startColumn(current.col);
+    window.addEventListener("keydown", handleKeydown);
+  }
+
+  // 2. VALIDASI DATA DIRI 5 KOLOM
   function goToInstructions() {
     const nameVal = document.getElementById("nameInput").value.trim();
     const emailVal = document.getElementById("emailInput").value.trim();
@@ -465,294 +563,252 @@
     const errBox = document.getElementById("profileErrBox");
     errBox.hidden = true;
 
-    if (!nameVal) { errBox.textContent = "Mohon isi Nama Lengkap Anda."; errBox.hidden = false; return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) { errBox.textContent = "Format email tidak valid."; errBox.hidden = false; return; }
+    if (!nameVal) { errBox.textContent = "Mohon isi Nama Lengkap Anda sesuai KTP."; errBox.hidden = false; return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) { errBox.textContent = "Format email aktif tidak valid."; errBox.hidden = false; return; }
     if (!nohpVal) { errBox.textContent = "Mohon isi No. HP / WhatsApp Anda."; errBox.hidden = false; return; }
     if (!posisiVal) { errBox.textContent = "Mohon isi Posisi yang Dilamar."; errBox.hidden = false; return; }
     if (!genderEl) { errBox.textContent = "Mohon pilih Jenis Kelamin Anda."; errBox.hidden = false; return; }
 
-    candidateData = {
-      name: nameVal,
-      email: emailVal,
-      nohp: nohpVal,
-      posisi: posisiVal,
-      gender: genderEl.value
-    };
+    candidate.name = nameVal;
+    candidate.email = emailVal;
+    candidate.nohp = nohpVal;
+    candidate.posisi = posisiVal;
+    candidate.gender = genderEl.value;
 
-    saveSession();
-    showScreen("screen-instructions");
+    saveKraepelinSession();
+    showScreen("setup-screen");
   }
 
   function backToProfile() {
     showScreen("screen-profile");
   }
 
-  /* 3. Generator Soal Kraepelin & State Management */
-  function generateColumns() {
-    columnsData = [];
+  function getOpLetter(opIdx) {
+    if (opIdx <= 26) return String.fromCharCode(96 + opIdx);
+    return "aa";
+  }
+
+  // 3. RUNTIME ASESMEN SESUAI URUTAN SOAL BAKU
+  function startTest() {
+    initAudio();
+    showScreen("test-screen");
+
+    current.col = 1;
+    logs = [];
     colSummary = [];
-    for (let c = 0; c < TOTAL_COLUMNS; c++) {
-      let nums = [];
-      for (let n = 0; n <= OPS_PER_COLUMN; n++) {
-        nums.push(Math.floor(Math.random() * 9) + 1); // Digit 1 s/d 9
-      }
-      columnsData.push(nums);
-      colSummary.push({ total: 0, correct: 0, error: 0 });
+
+    saveKraepelinSession();
+    startColumn(1);
+    window.addEventListener("keydown", handleKeydown);
+  }
+
+  function startColumn(colIdx) {
+    current.col = colIdx;
+    current.op = 1;
+
+    const colDigits = KRAEPELIN_EXCEL_DATA[colIdx - 1];
+    if (!colDigits) {
+      finishTest();
+      return;
+    }
+    current.topNum = colDigits[0];
+    current.bottomNum = colDigits[1];
+
+    current.colAnswers = [];
+    current.colStartTime = performance.now();
+    current.lastInputTime = current.colStartTime;
+
+    updateHUD();
+    renderDigits();
+    saveKraepelinSession();
+
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(updateTimer, 40);
+  }
+
+  function renderDigits() {
+    document.getElementById("num-top").innerText = current.topNum;
+    document.getElementById("num-bottom").innerText = current.bottomNum;
+  }
+
+  function updateHUD() {
+    document.getElementById("hud-col").innerText = `Lajur: ${current.col} / ${CONFIG.totalCols}`;
+    document.getElementById("hud-row").innerText = `Operasi: ${current.op} / ${CONFIG.maxOpsPerCol}`;
+    document.getElementById("op-label").innerText = `Soal ${current.col}${getOpLetter(current.op)} (${current.topNum} + ${current.bottomNum})`;
+  }
+
+  function updateTimer() {
+    const elapsed = (performance.now() - current.colStartTime) / 1000;
+    const remaining = Math.max(0, CONFIG.intervalSec - elapsed);
+    const progressPct = (remaining / CONFIG.intervalSec) * 100;
+
+    document.getElementById("hud-timer").innerText = `Waktu: ${Math.ceil(remaining)}s`;
+    document.getElementById("interval-progress").style.width = `${progressPct}%`;
+    document.getElementById("timer-display").innerText = `${Math.ceil(remaining)}s`;
+
+    if (remaining <= 0) {
+      nextColumn();
     }
   }
 
-  function startKraepelinTest() {
-    generateColumns();
-    currentColumn = 0;
-    currentOp = 0;
-    secondsRemaining = SECONDS_PER_COLUMN;
-    isTestRunning = true;
-
-    showScreen("screen-test");
-    renderCurrentMath();
-    startColumnTimer();
-    window.addEventListener("keydown", handlePhysicalKey);
-  }
-
-  function renderCurrentMath() {
-    document.getElementById("hud-col").innerText = `Lajur: ${currentColumn + 1} / ${TOTAL_COLUMNS}`;
-    document.getElementById("hud-op").innerText = `Operasi: ${currentOp + 1} / ${OPS_PER_COLUMN}`;
-    document.getElementById("math-input").value = "";
-
-    const colNums = columnsData[currentColumn];
-    const b = colNums[currentOp];
-    const t = colNums[currentOp + 1];
-
-    document.getElementById("num-bottom").innerText = b;
-    document.getElementById("num-top").innerText = t;
-  }
-
-  function handleDigitInput(val) {
-    if (!isTestRunning) return;
-    if (currentOp >= OPS_PER_COLUMN) return;
-
-    const colNums = columnsData[currentColumn];
-    const expected = (colNums[currentOp] + colNums[currentOp + 1]) % 10;
-    const isCorrect = (val === expected);
-
-    colSummary[currentColumn].total++;
-    if (isCorrect) {
-      colSummary[currentColumn].correct++;
-    } else {
-      colSummary[currentColumn].error++;
-    }
-
-    document.getElementById("math-input").value = val;
-    currentOp++;
-
-    if (currentOp < OPS_PER_COLUMN) {
-      setTimeout(() => { renderCurrentMath(); }, 60);
-    } else {
-      document.getElementById("num-bottom").innerText = "-";
-      document.getElementById("num-top").innerText = "-";
-    }
-    saveSession();
-  }
-
-  function handlePhysicalKey(e) {
-    if (!isTestRunning) return;
-    if (e.key >= "0" && e.key <= "9") {
-      handleDigitInput(parseInt(e.key));
-    }
-  }
-
-  function startColumnTimer() {
+  function nextColumn() {
     clearInterval(timerInterval);
-    updateProgressUI();
+    playChime();
 
-    timerInterval = setInterval(() => {
-      secondsRemaining--;
-      updateProgressUI();
+    const banner = document.getElementById("flash-banner");
+    banner.innerText = "PINDAH LAJUR!";
+    setTimeout(() => { banner.innerText = ""; }, 600);
 
-      if (secondsRemaining <= 0) {
-        currentColumn++;
-        if (currentColumn >= TOTAL_COLUMNS) {
-          clearInterval(timerInterval);
-          finishKraepelinTest();
-        } else {
-          currentOp = 0;
-          secondsRemaining = SECONDS_PER_COLUMN;
-          renderCurrentMath();
-        }
-      }
-    }, 1000);
-  }
-
-  function updateProgressUI() {
-    document.getElementById("hud-timer").innerText = `Sisa: ${secondsRemaining}s`;
-    document.getElementById("timer-display").innerText = `${secondsRemaining}s`;
-    const pct = (secondsRemaining / SECONDS_PER_COLUMN) * 100;
-    document.getElementById("interval-progress").style.width = pct + "%";
-  }
-
-  function saveSession() {
-    if (!activeToken || !candidateData.name) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        token: activeToken,
-        candidate: candidateData,
-        currentColumn: currentColumn,
-        currentOp: currentOp,
-        colSummary: colSummary,
-        columnsData: columnsData
-      }));
-    } catch (e) {}
-  }
-
-  function resumeKraepelinSession() {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return;
-    const p = JSON.parse(saved);
-
-    activeToken = p.token;
-    candidateData = p.candidate || {};
-    currentColumn = p.currentColumn || 0;
-    currentOp = p.currentOp || 0;
-    colSummary = p.colSummary || [];
-    columnsData = p.columnsData || [];
-    secondsRemaining = SECONDS_PER_COLUMN;
-    isTestRunning = true;
-
-    showScreen("screen-test");
-    renderCurrentMath();
-    startColumnTimer();
-    window.addEventListener("keydown", handlePhysicalKey);
-  }
-
-  /* 4. Kalkulasi Norma Baku & Pengiriman Hasil */
-  async function finishKraepelinTest() {
-    isTestRunning = false;
-    window.removeEventListener("keydown", handlePhysicalKey);
-    clearInterval(timerInterval);
-    showScreen("screen-finish");
-
-    let totalDone = 0;
-    let totalCorrect = 0;
-    let totalErrors = 0;
-    let Y = []; // array 50 lajur
-
-    colSummary.forEach(c => {
-      totalDone += c.total;
-      totalCorrect += c.correct;
-      totalErrors += c.error;
-      Y.push(c.total);
+    const total = current.colAnswers.length;
+    const correct = current.colAnswers.filter(a => a.isCorrect).length;
+    const error = total - correct;
+    colSummary.push({
+      col: current.col,
+      total: total,
+      correct: correct,
+      error: error,
+      accuracy: total > 0 ? ((correct / total) * 100).toFixed(1) : "0.0"
     });
 
-    const totalSkipped = 0;
-    const tianker = totalErrors + totalSkipped;
-    const panker = (totalDone / TOTAL_COLUMNS).toFixed(2);
-    const maxY = Math.max(...Y);
-    const minY = Math.min(...Y);
-    const janker = maxY - minY;
+    saveKraepelinSession();
 
-    // Hitung Kemiringan Garis (50 b / Hanker) secara matematis:
-    // N = 50, sumX = 1275, sumX2 = 42925, denominator = 50*42925 - 1275^2 = 520625
+    if (current.col >= CONFIG.totalCols || current.col >= KRAEPELIN_EXCEL_DATA.length) {
+      finishTest();
+    } else {
+      startColumn(current.col + 1);
+    }
+  }
+
+  function handleKeydown(e) {
+    if (e.key >= "0" && e.key <= "9") {
+      handleInput(parseInt(e.key));
+    }
+  }
+
+  function handleInput(val) {
+    if (current.col > CONFIG.totalCols) return;
+
+    const now = performance.now();
+    const rt = Math.round(now - current.lastInputTime);
+    current.lastInputTime = now;
+
+    const expected = (current.topNum + current.bottomNum) % 10;
+    const isCorrect = (val === expected);
+
+    const record = {
+      col: current.col,
+      op: current.op,
+      opCode: `${current.col}${getOpLetter(current.op)}`,
+      num1: current.topNum,
+      num2: current.bottomNum,
+      expected: expected,
+      input: val,
+      isCorrect: isCorrect,
+      rtMs: rt
+    };
+
+    logs.push(record);
+    current.colAnswers.push(record);
+
+    if (current.op >= CONFIG.maxOpsPerCol) {
+      nextColumn();
+      return;
+    }
+
+    current.op++;
+    const colDigits = KRAEPELIN_EXCEL_DATA[current.col - 1];
+    if (!colDigits) {
+      nextColumn();
+      return;
+    }
+
+    current.topNum = colDigits[current.op - 1];
+    current.bottomNum = colDigits[current.op];
+
+    updateHUD();
+    renderDigits();
+  }
+
+  // 4. PERHITUNGAN NORMA & PENGIRIMAN PAYLOAD KE GOOGLE SHEETS
+  function finishTest() {
+    window.removeEventListener("keydown", handleKeydown);
+    if (timerInterval) clearInterval(timerInterval);
+
+    showScreen("finish-screen");
+
+    const totals = colSummary.map(c => c.total);
+    const corrects = colSummary.map(c => c.correct);
+    const errors = colSummary.map(c => c.error);
+
+    let totalDone = totals.reduce((a, b) => a + b, 0);
+    let totalCorrect = corrects.reduce((a, b) => a + b, 0);
+    let totalErrors = errors.reduce((a, b) => a + b, 0);
+    let totalSkipped = 0;
+    let tianker = totalErrors + totalSkipped;
+
+    let panker = parseFloat((totalDone / CONFIG.totalCols).toFixed(2));
+    let maxY = Math.max(...totals);
+    let minY = Math.min(...totals);
+    let janker = maxY - minY; // RANGE TUNGGAL (MAX - MIN)
+
+    // Kemiringan Garis (Hanker / 50 b)
     let sumXY = 0;
     for (let i = 0; i < 50; i++) {
-      sumXY += (i + 1) * Y[i];
+      sumXY += (i + 1) * (totals[i] || 0);
     }
-    const sumY = totalDone;
-    const numerator = (50 * sumXY) - (1275 * sumY);
-    const slopeB = numerator / 520625;
-    const hanker = (50 * slopeB).toFixed(3);
+    let sumY = totalDone;
+    let numerator = (50 * sumXY) - (1275 * sumY);
+    let slopeB = numerator / 520625;
+    let hanker = parseFloat((50 * slopeB).toFixed(3));
 
     const payload = {
       timestamp: new Date().toLocaleString("id-ID"),
-      token: activeToken,
-      name: candidateData.name,
-      email: candidateData.email,
-      nohp: candidateData.nohp,
-      posisi: candidateData.posisi,
-      gender: candidateData.gender,
+      token: candidate.token,
+      name: candidate.name,
+      email: candidate.email,
+      nohp: candidate.nohp,
+      posisi: candidate.posisi,
+      gender: candidate.gender,
       totalSelesai: totalDone,
       totalBenar: totalCorrect,
       sumErrors: totalErrors,
       sumSkippeds: totalSkipped,
-      panker: parseFloat(panker),
+      panker: panker,
       janker: janker,
-      hanker: parseFloat(hanker),
+      hanker: hanker,
       tianker: tianker,
-      lajurCSV: Y.join(",")
+      lajurCSV: totals.join(",")
     };
 
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem("krp_active_session");
 
-    try {
-      await fetch(WEBHOOK_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload)
-      });
-
-      document.getElementById("finish-msg").innerHTML = `
-        <span style="color: var(--primary); font-weight: 700; font-size: 1.15rem;">Data Berhasil Dikirim ke Server!</span><br><br>
-        Terima kasih, <strong>${candidateData.name}</strong>. Seluruh proses pengerjaan tes Kraepelin telah selesai.<br>
-        Token Anda (<strong>${activeToken}</strong>) kini telah dinonaktifkan.
-      `;
-    } catch (err) {
-      document.getElementById("finish-msg").innerHTML = "Selesai. Terjadi kendala visualisasi jaringan, namun data aman.";
-    }
+    fetch(WEBHOOK_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(payload)
+    }).then(() => {
+      document.getElementById("finish-msg").innerHTML = 
+        `<span style="color: #107c41; font-weight: 700;">Data Berhasil Terkirim!</span><br><br>Terima kasih, <strong>${candidate.name}</strong>. Rangkaian tes Kraepelin telah selesai. Token Anda (<strong>${candidate.token}</strong>) telah dinonaktifkan.`;
+      document.getElementById("session-metadata").innerText = `ID Peserta: ${candidate.email} | Token: ${candidate.token}`;
+    }).catch(err => {
+      document.getElementById("finish-msg").innerHTML = "Selesai. Terjadi sedikit kendala visualisasi jaringan, namun data lokal Anda aman.";
+    });
   }
 
-  /* 5. Anti-Cheat & Deteksi Kecurangan */
-  function registerViolation(reason) {
-    if (!isTestRunning) return;
-    if (isStrikeCooldown) return;
-    isStrikeCooldown = true;
-    setTimeout(() => { isStrikeCooldown = false; }, 2500);
-
-    cheatStrikes = Math.min(cheatStrikes + 1, MAX_STRIKES);
-
-    const modal = document.getElementById("strike-modal");
-    const title = document.getElementById("strike-title");
-    const desc = document.getElementById("strike-desc");
-    const btn = document.getElementById("btn-strike-ack");
-
-    if (cheatStrikes >= MAX_STRIKES) {
-      title.innerText = `DISKUALIFIKASI (${cheatStrikes}/${MAX_STRIKES})`;
-      desc.innerHTML = `Anda telah melakukan tindakan terlarang (<strong>${reason}</strong>) sebanyak 3 kali. Tes langsung dihentikan.`;
-      btn.innerText = "Tutup Ujian";
-      btn.onclick = () => { modal.style.display = "none"; finishKraepelinTest(); };
-      modal.style.display = "flex";
-    } else {
-      title.innerText = `PERINGATAN KEAMANAN (${cheatStrikes}/${MAX_STRIKES})`;
-      desc.innerHTML = `Terdeteksi aktivitas: <strong>${reason}</strong>.<br>Maksimal toleransi adalah ${MAX_STRIKES} kali.`;
-      btn.innerText = "Saya Mengerti & Lanjutkan";
-      btn.onclick = () => { modal.style.display = "none"; };
-      modal.style.display = "flex";
-    }
-  }
-
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") {
-      registerViolation("Meninggalkan Tab / Halaman Ujian");
+  document.addEventListener("visibilitychange", function() {
+    if (document.visibilityState === 'hidden' && document.getElementById("test-screen").classList.contains("active")) {
+      alert("PERINGATAN: Anda terdeteksi meninggalkan layar tes. Aktivitas ini dicatat oleh penguji.");
     }
   });
 
-  window.addEventListener("blur", () => {
-    registerViolation("Beralih ke Jendela atau Aplikasi Lain");
-  });
+  document.addEventListener('contextmenu', event => event.preventDefault());
 
-  document.addEventListener("contextmenu", e => e.preventDefault());
-
-  // Cek resume lokal saat halaman dibuka
-  document.addEventListener("DOMContentLoaded", () => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const p = JSON.parse(saved);
-        if (p.token) {
-          document.getElementById("input-token").value = p.token;
-          document.getElementById("resume-msg").innerHTML = `Token: <strong>${p.token}</strong> (${p.candidate?.name || "Peserta"})<br>Progres: <strong>Lajur ${p.currentColumn + 1} / 50</strong>.`;
-          document.getElementById("token-resume-alert").style.display = "block";
-        }
-      } catch (e) {}
+  document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey || e.metaKey) {
+      const key = e.key.toLowerCase();
+      if (key === 'v' && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return true;
+      if (['c', 'u', 'p', 's'].includes(key)) e.preventDefault();
     }
   });
 </script>
