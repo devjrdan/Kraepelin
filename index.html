@@ -115,7 +115,7 @@
     .btn-outline { background: white; color: var(--text); border: 1px solid var(--border); }
     .btn-outline:hover { background: #f1f5f9; }
 
-    /* STYLES SIMULASI LATIHAN */
+    /* SIMULASI LATIHAN */
     .sim-card {
       background: #ffffff;
       border: 2px solid var(--border);
@@ -251,7 +251,7 @@
       <button class="btn" id="btn-verify-token" onclick="verifyTokenKraepelin()">Verifikasi Token ➔</button>
     </div>
 
-    <!-- Resume Box Tanpa Tombol Reset Cheat -->
+    <!-- Resume Box Otomatis -->
     <div id="token-resume-alert" style="display: none; max-width: 480px; margin: 24px auto 0 auto; padding: 16px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; text-align: left;">
       <h3 style="color: var(--primary); font-size: 0.95rem; margin-bottom: 6px;">Sesi Ujian Ditemukan!</h3>
       <p style="margin-bottom: 12px; font-size: 0.85rem; color: #1e293b;" id="resume-msg"></p>
@@ -301,12 +301,12 @@
     </div>
   </div>
 
-  <!-- SCREEN 2: PETUNJUK PENGERJAAN & SIMULASI LATIHAN INTERAKTIF -->
+  <!-- SCREEN 2: PETUNJUK PENGERJAAN & SIMULASI LATIHAN -->
   <div id="setup-screen" class="card-body screen">
     <h1>Petunjuk Pengerjaan Kraepelin</h1>
     <p class="desc">
       Jumlahkan 2 angka yang tersusun vertikal dari <strong>bawah ke atas</strong>.<br>
-      Ketikkan <strong>hanya digit satuan</strong> (contoh: 4 + 9 = 13, ketik <strong>3</strong>; 9 + 2 = 11, ketik <strong>1</strong>; 3 + 4 = 7, ketik <strong>7</strong>).<br>
+      Ketikkan <strong>hanya digit satuan</strong> (contoh: 4 + 9 = 13, ketik <strong>3</strong>; 9 + 2 = 11, ketik <strong>1</strong>).<br>
       Layar otomatis berpindah ke lajur berikutnya setiap 15 detik.
     </p>
 
@@ -325,7 +325,7 @@
       </div>
     </div>
 
-    <!-- KOTAK SIMULASI LATIHAN -->
+    <!-- KOTAK SIMULASI LATIHAN INTERAKTIF -->
     <div class="card" style="background: #f8fafc; border: 1px dashed var(--primary); padding: 22px; margin-bottom: 24px;">
       <h3 style="color: var(--primary); font-size: 1.05rem; margin-bottom: 6px;">💡 Simulasi Latihan:</h3>
       <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 18px;">
@@ -333,7 +333,6 @@
       </p>
 
       <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 16px;">
-        <!-- Soal Latihan 1: 8 (bawah) + 7 (atas) = 15 -> jawaban 5 -->
         <div class="sim-card">
           <div style="font-size: 0.75rem; font-weight: 700; color: var(--muted); margin-bottom: 6px;">CONTOH 1</div>
           <div style="font-size: 2rem; font-weight: 800; line-height: 1; color: var(--text);">7</div>
@@ -343,7 +342,6 @@
           <div id="sim-status-1" style="font-size: 0.78rem; font-weight: 600; margin-top: 6px; min-height: 18px;"></div>
         </div>
 
-        <!-- Soal Latihan 2: 9 (bawah) + 4 (atas) = 13 -> jawaban 3 -->
         <div class="sim-card">
           <div style="font-size: 0.75rem; font-weight: 700; color: var(--muted); margin-bottom: 6px;">CONTOH 2</div>
           <div style="font-size: 2rem; font-weight: 800; line-height: 1; color: var(--text);">4</div>
@@ -353,7 +351,6 @@
           <div id="sim-status-2" style="font-size: 0.78rem; font-weight: 600; margin-top: 6px; min-height: 18px;"></div>
         </div>
 
-        <!-- Soal Latihan 3: 2 (bawah) + 5 (atas) = 7 -> jawaban 7 -->
         <div class="sim-card">
           <div style="font-size: 0.75rem; font-weight: 700; color: var(--muted); margin-bottom: 6px;">CONTOH 3</div>
           <div style="font-size: 2rem; font-weight: 800; line-height: 1; color: var(--text);">5</div>
@@ -422,7 +419,7 @@
 </div>
 
 <script>
-  // 50 LAJUR DARI EXCEL KRAEPELIN BAKU (URUTAN ASLI PERSIS DARI INDEX 7)
+  // 50 LAJUR BAKU KRAEPELIN DARI INDEX 7
   const KRAEPELIN_EXCEL_DATA = [
     [4, 9, 2, 7, 4, 6, 8, 9, 2, 9, 5, 6, 2, 2, 8, 1, 1, 2, 2, 9, 6, 6, 4, 7, 9, 7, 7, 2],
     [3, 8, 1, 6, 1, 7, 5, 8, 6, 2, 4, 6, 5, 9, 2, 5, 3, 6, 3, 5, 9, 1, 7, 6, 9, 6, 5, 7],
@@ -499,6 +496,8 @@
   let colSummary = [];
   let timerInterval = null;
   let audioCtx = null;
+  let isTestRunning = false;
+  let activeScreen = "screen-token";
 
   function initAudio() {
     if (!audioCtx) {
@@ -525,6 +524,7 @@
   function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
+    activeScreen = id;
   }
 
   function quickDevReset() {
@@ -534,7 +534,20 @@
     }
   }
 
-  // DETEKSI SESI AKTIF KETIKA LOAD
+  function saveKraepelinSession() {
+    if (!candidate.token) return;
+    const sessionData = {
+      candidate: candidate,
+      isTestRunning: isTestRunning,
+      activeScreen: activeScreen,
+      currentCol: current.col,
+      logs: logs,
+      colSummary: colSummary
+    };
+    localStorage.setItem("krp_active_session", JSON.stringify(sessionData));
+  }
+
+  // DETEKSI SESI AKTIF SAAT REFRESH
   window.addEventListener("load", function () {
     const saved = localStorage.getItem("krp_active_session");
     if (saved) {
@@ -544,7 +557,12 @@
           document.getElementById("input-token").value = parsed.candidate.token;
           const resumeBox = document.getElementById("token-resume-alert");
           const resumeMsg = document.getElementById("resume-msg");
-          resumeMsg.innerHTML = `Peserta: <strong>${parsed.candidate.name || '-'}</strong><br>Status: Sedang di <strong>Lajur ${parsed.currentCol || 1}</strong> dari 50 lajur.`;
+          
+          if (parsed.isTestRunning) {
+            resumeMsg.innerHTML = `Peserta: <strong>${parsed.candidate.name || '-'}</strong><br>Status: Sedang di <strong>Lajur ${parsed.currentCol || 1}</strong> dari 50 lajur.`;
+          } else {
+            resumeMsg.innerHTML = `Peserta: <strong>${parsed.candidate.name || '-'}</strong><br>Status: <strong>Data diri tersimpan (Tes belum dimulai)</strong>.`;
+          }
           resumeBox.style.display = "block";
         }
       } catch (e) {
@@ -554,24 +572,13 @@
   });
 
   window.addEventListener("beforeunload", function (e) {
-    if (localStorage.getItem("krp_active_session")) {
+    if (isTestRunning && localStorage.getItem("krp_active_session")) {
       e.preventDefault();
       e.returnValue = "Tes Kraepelin sedang berlangsung! Sesi pengerjaan Anda akan disimpan.";
     }
   });
 
-  function saveKraepelinSession() {
-    if (!candidate.token) return;
-    const sessionData = {
-      candidate: candidate,
-      currentCol: current.col,
-      logs: logs,
-      colSummary: colSummary
-    };
-    localStorage.setItem("krp_active_session", JSON.stringify(sessionData));
-  }
-
-  // 1. VERIFIKASI TOKEN (STRICT FAST-RESUME)
+  // 1. VERIFIKASI TOKEN
   async function verifyTokenKraepelin() {
     const inputEl = document.getElementById("input-token");
     const val = inputEl.value.trim().toUpperCase();
@@ -605,6 +612,7 @@
       candidate.token = val;
       document.getElementById("display-active-token").innerText = val;
       showScreen("screen-profile");
+      saveKraepelinSession();
 
     } catch (err) {
       console.error(err);
@@ -620,20 +628,44 @@
     if (!saved) return;
     const parsed = JSON.parse(saved);
 
-    candidate = parsed.candidate;
+    candidate = parsed.candidate || {};
     current.col = parsed.currentCol || 1;
     logs = parsed.logs || [];
     colSummary = parsed.colSummary || [];
 
-    alert(`Selamat datang kembali, ${candidate.name}! Melanjutkan tes Kraepelin dari lajur ${current.col}.`);
+    // Pulihkan isian form
+    if (document.getElementById("nameInput")) {
+      document.getElementById("nameInput").value = candidate.name || "";
+      document.getElementById("emailInput").value = candidate.email || "";
+      document.getElementById("nohpInput").value = candidate.nohp || "";
+      document.getElementById("posisiInput").value = candidate.posisi || "";
+      if (candidate.gender) {
+        const gEl = document.querySelector(`input[name="genderInput"][value="${candidate.gender}"]`);
+        if (gEl) gEl.checked = true;
+      }
+    }
+    if (document.getElementById("display-active-token")) {
+      document.getElementById("display-active-token").innerText = candidate.token || "";
+    }
 
-    initAudio();
-    showScreen("test-screen");
-    startColumn(current.col);
-    window.addEventListener("keydown", handleKeydown);
+    // CEK APAKAH TES SUDAH BERJALAN ATAU MASIH DI TAHAP DATA DIRI / INSTRUKSI
+    if (parsed.isTestRunning) {
+      alert(`Selamat datang kembali, ${candidate.name}! Melanjutkan tes Kraepelin dari lajur ${current.col}.`);
+      initAudio();
+      isTestRunning = true;
+      showScreen("test-screen");
+      startColumn(current.col);
+      window.addEventListener("keydown", handleKeydown);
+    } else {
+      if (parsed.activeScreen === "setup-screen") {
+        showScreen("setup-screen");
+      } else {
+        showScreen("screen-profile");
+      }
+    }
   }
 
-  // 2. VALIDASI DATA DIRI 5 KOLOM
+  // 2. FORM DATA DIRI & NAVIGASI
   function goToInstructions() {
     const nameVal = document.getElementById("nameInput").value.trim();
     const emailVal = document.getElementById("emailInput").value.trim();
@@ -655,16 +687,17 @@
     candidate.posisi = posisiVal;
     candidate.gender = genderEl.value;
 
-    saveKraepelinSession();
     showScreen("setup-screen");
+    saveKraepelinSession();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function backToProfile() {
     showScreen("screen-profile");
+    saveKraepelinSession();
   }
 
-  // 3. LOGIKA VALIDASI SIMULASI LATIHAN (SEPERTI DISC)
+  // 3. LOGIKA SIMULASI LATIHAN INTERAKTIF
   function validateSimulation() {
     const in1 = document.getElementById("sim-input-1");
     const in2 = document.getElementById("sim-input-2");
@@ -750,9 +783,10 @@
     return "aa";
   }
 
-  // 4. RUNTIME ASESMEN SESUAI URUTAN SOAL BAKU
+  // 4. MEMULAI TES SESUNGGUHNYA
   function startTest() {
     initAudio();
+    isTestRunning = true;
     showScreen("test-screen");
 
     current.col = 1;
@@ -891,8 +925,9 @@
     renderDigits();
   }
 
-  // 5. PERHITUNGAN NORMA & PENGIRIMAN PAYLOAD
+  // 5. PENYELESAIAN TES
   function finishTest() {
+    isTestRunning = false;
     window.removeEventListener("keydown", handleKeydown);
     if (timerInterval) clearInterval(timerInterval);
 
@@ -913,7 +948,6 @@
     let minY = Math.min(...totals);
     let janker = maxY - minY;
 
-    // Hanker (Kemiringan 50 b)
     let sumXY = 0;
     for (let i = 0; i < 50; i++) {
       sumXY += (i + 1) * (totals[i] || 0);
@@ -959,7 +993,7 @@
   }
 
   document.addEventListener("visibilitychange", function() {
-    if (document.visibilityState === 'hidden' && document.getElementById("test-screen").classList.contains("active")) {
+    if (isTestRunning && document.visibilityState === 'hidden' && document.getElementById("test-screen").classList.contains("active")) {
       alert("PERINGATAN: Anda terdeteksi meninggalkan layar tes. Aktivitas ini dicatat oleh penguji.");
     }
   });
