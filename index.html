@@ -107,13 +107,52 @@
       border-radius: 6px;
       cursor: pointer;
       display: inline-block;
-      transition: background 0.2s;
+      transition: all 0.2s;
       font-size: 1rem;
     }
     .btn:hover { background: var(--primary-dark); }
-    .btn:disabled { background: #94a3b8; cursor: not-allowed; }
+    .btn:disabled { background: #94a3b8; cursor: not-allowed; opacity: 0.6; }
     .btn-outline { background: white; color: var(--text); border: 1px solid var(--border); }
     .btn-outline:hover { background: #f1f5f9; }
+
+    /* STYLES SIMULASI LATIHAN */
+    .sim-card {
+      background: #ffffff;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 18px;
+      text-align: center;
+      min-width: 110px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+    .sim-input {
+      width: 52px;
+      height: 48px;
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: 800;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      outline: none;
+      font-family: monospace;
+      color: var(--primary);
+      background: #ffffff;
+      transition: all 0.2s;
+    }
+    .sim-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(16, 124, 65, 0.15);
+    }
+    .sim-input.correct {
+      border-color: #107c41;
+      background: #f0fdf4;
+      color: #107c41;
+    }
+    .sim-input.wrong {
+      border-color: #dc2626;
+      background: #fef2f2;
+      color: #dc2626;
+    }
 
     /* HUD Kraepelin */
     .test-hud {
@@ -262,12 +301,12 @@
     </div>
   </div>
 
-  <!-- SCREEN 2: PETUNJUK PENGERJAAN -->
+  <!-- SCREEN 2: PETUNJUK PENGERJAAN & SIMULASI LATIHAN INTERAKTIF -->
   <div id="setup-screen" class="card-body screen">
     <h1>Petunjuk Pengerjaan Kraepelin</h1>
     <p class="desc">
       Jumlahkan 2 angka yang tersusun vertikal dari <strong>bawah ke atas</strong>.<br>
-      Ketikkan <strong>hanya digit satuan</strong> (contoh: 4 + 9 = 13, ketik <strong>3</strong>; 9 + 2 = 11, ketik <strong>1</strong>).<br>
+      Ketikkan <strong>hanya digit satuan</strong> (contoh: 4 + 9 = 13, ketik <strong>3</strong>; 9 + 2 = 11, ketik <strong>1</strong>; 3 + 4 = 7, ketik <strong>7</strong>).<br>
       Layar otomatis berpindah ke lajur berikutnya setiap 15 detik.
     </p>
 
@@ -286,9 +325,51 @@
       </div>
     </div>
 
+    <!-- KOTAK SIMULASI LATIHAN -->
+    <div class="card" style="background: #f8fafc; border: 1px dashed var(--primary); padding: 22px; margin-bottom: 24px;">
+      <h3 style="color: var(--primary); font-size: 1.05rem; margin-bottom: 6px;">💡 Simulasi Latihan:</h3>
+      <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 18px;">
+        Cobalah selesaikan <strong>3 contoh penjumlahan</strong> di bawah ini dengan mengetikkan <u>digit satuannya</u> untuk mengaktifkan tombol mulai:
+      </p>
+
+      <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 16px;">
+        <!-- Soal Latihan 1: 8 (bawah) + 7 (atas) = 15 -> jawaban 5 -->
+        <div class="sim-card">
+          <div style="font-size: 0.75rem; font-weight: 700; color: var(--muted); margin-bottom: 6px;">CONTOH 1</div>
+          <div style="font-size: 2rem; font-weight: 800; line-height: 1; color: var(--text);">7</div>
+          <div style="color: var(--muted); font-size: 1.1rem; margin: 2px 0;">+</div>
+          <div style="font-size: 2rem; font-weight: 800; line-height: 1; color: var(--text); margin-bottom: 8px;">8</div>
+          <input type="text" id="sim-input-1" class="sim-input" maxlength="1" placeholder="?" autocomplete="off" oninput="validateSimulation()">
+          <div id="sim-status-1" style="font-size: 0.78rem; font-weight: 600; margin-top: 6px; min-height: 18px;"></div>
+        </div>
+
+        <!-- Soal Latihan 2: 9 (bawah) + 4 (atas) = 13 -> jawaban 3 -->
+        <div class="sim-card">
+          <div style="font-size: 0.75rem; font-weight: 700; color: var(--muted); margin-bottom: 6px;">CONTOH 2</div>
+          <div style="font-size: 2rem; font-weight: 800; line-height: 1; color: var(--text);">4</div>
+          <div style="color: var(--muted); font-size: 1.1rem; margin: 2px 0;">+</div>
+          <div style="font-size: 2rem; font-weight: 800; line-height: 1; color: var(--text); margin-bottom: 8px;">9</div>
+          <input type="text" id="sim-input-2" class="sim-input" maxlength="1" placeholder="?" autocomplete="off" oninput="validateSimulation()">
+          <div id="sim-status-2" style="font-size: 0.78rem; font-weight: 600; margin-top: 6px; min-height: 18px;"></div>
+        </div>
+
+        <!-- Soal Latihan 3: 2 (bawah) + 5 (atas) = 7 -> jawaban 7 -->
+        <div class="sim-card">
+          <div style="font-size: 0.75rem; font-weight: 700; color: var(--muted); margin-bottom: 6px;">CONTOH 3</div>
+          <div style="font-size: 2rem; font-weight: 800; line-height: 1; color: var(--text);">5</div>
+          <div style="color: var(--muted); font-size: 1.1rem; margin: 2px 0;">+</div>
+          <div style="font-size: 2rem; font-weight: 800; line-height: 1; color: var(--text); margin-bottom: 8px;">2</div>
+          <input type="text" id="sim-input-3" class="sim-input" maxlength="1" placeholder="?" autocomplete="off" oninput="validateSimulation()">
+          <div id="sim-status-3" style="font-size: 0.78rem; font-weight: 600; margin-top: 6px; min-height: 18px;"></div>
+        </div>
+      </div>
+
+      <div id="simFeedback" style="font-size: 0.92rem; font-weight: 600; text-align: center; min-height: 22px;"></div>
+    </div>
+
     <div style="display: flex; gap: 12px; max-width: 480px; margin: 0 auto;">
       <button class="btn btn-outline" style="flex: 1;" onclick="backToProfile()">← Ubah Data Diri</button>
-      <button class="btn" style="flex: 1;" onclick="startTest()">Mulai Pengerjaan 🚀</button>
+      <button class="btn" id="readyBtn" style="flex: 1;" onclick="startTest()" disabled>Mulai Pengerjaan 🚀</button>
     </div>
   </div>
 
@@ -490,13 +571,12 @@
     localStorage.setItem("krp_active_session", JSON.stringify(sessionData));
   }
 
-  // 1. VERIFIKASI TOKEN (STRICT FAST-RESUME, NO CONFIRM RESET)
+  // 1. VERIFIKASI TOKEN (STRICT FAST-RESUME)
   async function verifyTokenKraepelin() {
     const inputEl = document.getElementById("input-token");
     const val = inputEl.value.trim().toUpperCase();
     if (!val) return alert("Silakan masukkan kode token Kraepelin Anda!");
 
-    // Fast-resume jika sesi lokal untuk token ini sedang aktif
     const saved = localStorage.getItem("krp_active_session");
     if (saved) {
       try {
@@ -577,10 +657,92 @@
 
     saveKraepelinSession();
     showScreen("setup-screen");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function backToProfile() {
     showScreen("screen-profile");
+  }
+
+  // 3. LOGIKA VALIDASI SIMULASI LATIHAN (SEPERTI DISC)
+  function validateSimulation() {
+    const in1 = document.getElementById("sim-input-1");
+    const in2 = document.getElementById("sim-input-2");
+    const in3 = document.getElementById("sim-input-3");
+
+    const st1 = document.getElementById("sim-status-1");
+    const st2 = document.getElementById("sim-status-2");
+    const st3 = document.getElementById("sim-status-3");
+
+    const fb = document.getElementById("simFeedback");
+    const readyBtn = document.getElementById("readyBtn");
+
+    const val1 = in1.value.trim();
+    const val2 = in2.value.trim();
+    const val3 = in3.value.trim();
+
+    let correctCount = 0;
+
+    // Contoh 1: 8 + 7 = 15 -> Satuan 5
+    if (val1 === "") {
+      in1.className = "sim-input";
+      st1.textContent = "";
+    } else if (val1 === "5") {
+      in1.className = "sim-input correct";
+      st1.textContent = "✅ Benar";
+      st1.style.color = "#107c41";
+      correctCount++;
+      if (val2 === "") in2.focus();
+    } else {
+      in1.className = "sim-input wrong";
+      st1.textContent = "❌ 8+7=15 (5)";
+      st1.style.color = "#dc2626";
+    }
+
+    // Contoh 2: 9 + 4 = 13 -> Satuan 3
+    if (val2 === "") {
+      in2.className = "sim-input";
+      st2.textContent = "";
+    } else if (val2 === "3") {
+      in2.className = "sim-input correct";
+      st2.textContent = "✅ Benar";
+      st2.style.color = "#107c41";
+      correctCount++;
+      if (val3 === "") in3.focus();
+    } else {
+      in2.className = "sim-input wrong";
+      st2.textContent = "❌ 9+4=13 (3)";
+      st2.style.color = "#dc2626";
+    }
+
+    // Contoh 3: 2 + 5 = 7 -> Satuan 7
+    if (val3 === "") {
+      in3.className = "sim-input";
+      st3.textContent = "";
+    } else if (val3 === "7") {
+      in3.className = "sim-input correct";
+      st3.textContent = "✅ Benar";
+      st3.style.color = "#107c41";
+      correctCount++;
+    } else {
+      in3.className = "sim-input wrong";
+      st3.textContent = "❌ 2+5=7 (7)";
+      st3.style.color = "#dc2626";
+    }
+
+    if (correctCount === 3) {
+      fb.style.color = "#107c41";
+      fb.textContent = "✅ Jawaban contoh Anda sudah benar! Anda telah memahami aturan pengerjaan tes.";
+      readyBtn.disabled = false;
+    } else {
+      readyBtn.disabled = true;
+      if (val1 !== "" || val2 !== "" || val3 !== "") {
+        fb.style.color = "#dc2626";
+        fb.textContent = "Selesaikan ketiga contoh di atas dengan digit satuan yang benar.";
+      } else {
+        fb.textContent = "";
+      }
+    }
   }
 
   function getOpLetter(opIdx) {
@@ -588,7 +750,7 @@
     return "aa";
   }
 
-  // 3. RUNTIME ASESMEN SESUAI URUTAN SOAL BAKU
+  // 4. RUNTIME ASESMEN SESUAI URUTAN SOAL BAKU
   function startTest() {
     initAudio();
     showScreen("test-screen");
@@ -729,7 +891,7 @@
     renderDigits();
   }
 
-  // 4. PERHITUNGAN NORMA & PENGIRIMAN PAYLOAD KE GOOGLE SHEETS
+  // 5. PERHITUNGAN NORMA & PENGIRIMAN PAYLOAD
   function finishTest() {
     window.removeEventListener("keydown", handleKeydown);
     if (timerInterval) clearInterval(timerInterval);
@@ -749,9 +911,9 @@
     let panker = parseFloat((totalDone / CONFIG.totalCols).toFixed(2));
     let maxY = Math.max(...totals);
     let minY = Math.min(...totals);
-    let janker = maxY - minY; // RANGE TUNGGAL (MAX - MIN)
+    let janker = maxY - minY;
 
-    // Kemiringan Garis (Hanker / 50 b)
+    // Hanker (Kemiringan 50 b)
     let sumXY = 0;
     for (let i = 0; i < 50; i++) {
       sumXY += (i + 1) * (totals[i] || 0);
