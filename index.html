@@ -196,7 +196,27 @@
       transition: width 0.05s linear;
     }
 
-    .flash-banner { height: 26px; font-size: 1.15rem; font-weight: 800; color: #dc2626; margin-bottom: 8px; text-align: center; }
+    .flash-banner { 
+      height: 30px; 
+      font-size: 1.15rem; 
+      font-weight: 800; 
+      color: #ffffff; 
+      margin-bottom: 10px; 
+      text-align: center; 
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .flash-pill {
+      background: #dc2626;
+      color: #ffffff;
+      padding: 4px 16px;
+      border-radius: 99px;
+      font-size: 0.92rem;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 8px rgba(220, 38, 38, 0.25);
+    }
+
     .op-tag { display: inline-block; background: #f1f5f9; border: 1px solid var(--border); border-radius: 4px; padding: 3px 10px; font-size: 0.85rem; font-weight: 700; color: var(--primary); margin-bottom: 12px; }
 
     .number-stage {
@@ -207,6 +227,11 @@
       margin: 0 auto 24px auto;
       padding: 20px;
       text-align: center;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .number-stage.transitioning {
+      opacity: 0.25;
+      transform: scale(0.96);
     }
     .digit { font-size: 3.5rem; font-weight: 800; line-height: 1; color: var(--text); }
     .plus-sign { font-size: 1.6rem; font-weight: 700; color: var(--muted); margin: 6px 0; }
@@ -217,6 +242,11 @@
       gap: 10px;
       max-width: 280px;
       margin: 0 auto;
+      transition: opacity 0.2s ease;
+    }
+    .keypad.locked {
+      opacity: 0.45;
+      pointer-events: none;
     }
     .key {
       background: #fff;
@@ -357,7 +387,7 @@
     <p class="desc">
       Jumlahkan 2 angka yang tersusun vertikal dari <strong>bawah ke atas</strong>.<br>
       Ketikkan <strong>hanya digit satuan</strong> (contoh: 4 + 9 = 13, ketik <strong>3</strong>; 9 + 2 = 11, ketik <strong>1</strong>).<br>
-      Layar otomatis berpindah ke lajur berikutnya setiap 15 detik.
+      Layar otomatis berpindah ke lajur berikutnya setiap 15 detik (dilengkapi jeda transisi aman 1,2 detik antar lajur).
     </p>
 
     <div class="config-grid">
@@ -435,13 +465,13 @@
     <div class="flash-banner" id="flash-banner"></div>
     <div><span class="op-tag" id="op-label">Soal 1a</span></div>
 
-    <div class="number-stage">
+    <div class="number-stage" id="number-stage">
       <div class="digit" id="num-top">0</div>
       <div class="plus-sign">+</div>
       <div class="digit" id="num-bottom">0</div>
     </div>
 
-    <div class="keypad">
+    <div class="keypad" id="keypad-container">
       <button class="key" onclick="handleInput(1)">1</button>
       <button class="key" onclick="handleInput(2)">2</button>
       <button class="key" onclick="handleInput(3)">3</button>
@@ -469,7 +499,7 @@
 </div>
 
 <script>
-  // 50 LAJUR BAKU KRAEPELIN DARI INDEX 7
+  // 50 LAJUR BAKU KRAEPELIN
   const KRAEPELIN_EXCEL_DATA = [
     [4, 9, 2, 7, 4, 6, 8, 9, 2, 9, 5, 6, 2, 2, 8, 1, 1, 2, 2, 9, 6, 6, 4, 7, 9, 7, 7, 2],
     [3, 8, 1, 6, 1, 7, 5, 8, 6, 2, 4, 6, 5, 9, 2, 5, 3, 6, 3, 5, 9, 1, 7, 6, 9, 6, 5, 7],
@@ -528,7 +558,8 @@
   const CONFIG = {
     totalCols: 50,
     intervalSec: 15,
-    maxOpsPerCol: 27
+    maxOpsPerCol: 27,
+    transitionPauseMs: 1200 // Jeda transisi aman 1,2 detik antar lajur untuk mencegah missclick
   };
 
   let candidate = { token: "", name: "", email: "", nohp: "", posisi: "", gender: "" };
@@ -547,6 +578,7 @@
   let timerInterval = null;
   let audioCtx = null;
   let isTestRunning = false;
+  let isTransitioning = false; // Flag pengunci input selama pergantian lajur
   let activeScreen = "screen-token";
 
   /* ============ SISTEM KEAMANAN & PELANGGARAN (IST ENGINE) ============ */
@@ -578,11 +610,11 @@
       osc.type = "triangle";
       osc.frequency.setValueAtTime(880, audioCtx.currentTime);
       gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
       osc.start();
-      osc.stop(audioCtx.currentTime + 0.2);
+      osc.stop(audioCtx.currentTime + 0.25);
     } catch(e) {}
   }
 
@@ -740,7 +772,6 @@
 
     triggerGracePeriod();
 
-    // JIKA TES SUDAH BERJALAN, MASUK KE UJIAN. JIKA BELUM, KEMBALI KE LAYAR SEBELUMNYA
     if (parsed.isTestRunning) {
       alert(`Selamat datang kembali, ${candidate.name}! Melanjutkan tes Kraepelin dari lajur ${current.col}.`);
       initAudio();
@@ -838,7 +869,6 @@
 
     let correctCount = 0;
 
-    // Contoh 1: 8 + 7 = 15 -> Satuan 5
     if (val1 === "") {
       in1.className = "sim-input";
       st1.textContent = "";
@@ -854,7 +884,6 @@
       st1.style.color = "#dc2626";
     }
 
-    // Contoh 2: 9 + 4 = 13 -> Satuan 3
     if (val2 === "") {
       in2.className = "sim-input";
       st2.textContent = "";
@@ -870,7 +899,6 @@
       st2.style.color = "#dc2626";
     }
 
-    // Contoh 3: 2 + 5 = 7 -> Satuan 7
     if (val3 === "") {
       in3.className = "sim-input";
       st3.textContent = "";
@@ -909,6 +937,7 @@
   function startTest() {
     initAudio();
     isTestRunning = true;
+    isTransitioning = false;
     showScreen("test-screen");
 
     current.col = 1;
@@ -924,6 +953,7 @@
   function startColumn(colIdx) {
     current.col = colIdx;
     current.op = 1;
+    isTransitioning = false;
 
     const colDigits = KRAEPELIN_EXCEL_DATA[colIdx - 1];
     if (!colDigits) {
@@ -936,6 +966,12 @@
     current.colAnswers = [];
     current.colStartTime = performance.now();
     current.lastInputTime = current.colStartTime;
+
+    // Buka kunci tampilan dan keypad
+    document.getElementById("number-stage").classList.remove("transitioning");
+    document.getElementById("keypad-container").classList.remove("locked");
+    document.getElementById("flash-banner").innerHTML = "";
+    document.getElementById("interval-progress").style.width = "100%";
 
     updateHUD();
     renderDigits();
@@ -957,6 +993,8 @@
   }
 
   function updateTimer() {
+    if (isTransitioning) return;
+
     const elapsed = (performance.now() - current.colStartTime) / 1000;
     const remaining = Math.max(0, CONFIG.intervalSec - elapsed);
     const progressPct = (remaining / CONFIG.intervalSec) * 100;
@@ -970,14 +1008,14 @@
     }
   }
 
+  // LOGIKA PINDAH LAJUR DENGAN TRANSITION GRACE PERIOD (1,2 DETIK ANTI-MISSCLICK)
   function nextColumn() {
+    if (isTransitioning) return;
+    isTransitioning = true;
     clearInterval(timerInterval);
     playChime();
 
-    const banner = document.getElementById("flash-banner");
-    banner.innerText = "PINDAH LAJUR!";
-    setTimeout(() => { banner.innerText = ""; }, 600);
-
+    // Rekap hasil lajur yang baru selesai
     const total = current.colAnswers.length;
     const correct = current.colAnswers.filter(a => a.isCorrect).length;
     const error = total - correct;
@@ -989,23 +1027,42 @@
       accuracy: total > 0 ? ((correct / total) * 100).toFixed(1) : "0.0"
     });
 
+    // Jika sudah lajur ke-50, langsung selesaikan tes
+    if (current.col >= CONFIG.totalCols || current.col >= KRAEPELIN_EXCEL_DATA.length) {
+      saveKraepelinSession();
+      finishTest();
+      return;
+    }
+
+    // Simpan posisi ke lajur berikutnya agar aman jika ter-refresh saat transisi
+    const nextColIdx = current.col + 1;
+    current.col = nextColIdx;
     saveKraepelinSession();
 
-    if (current.col >= CONFIG.totalCols || current.col >= KRAEPELIN_EXCEL_DATA.length) {
-      finishTest();
-    } else {
-      startColumn(current.col + 1);
-    }
+    // Tampilkan efek visual jeda transisi & kunci keypad agar tidak terjadi missclick
+    document.getElementById("number-stage").classList.add("transitioning");
+    document.getElementById("keypad-container").classList.add("locked");
+    document.getElementById("hud-timer").innerText = "Pindah...";
+    document.getElementById("timer-display").innerText = "---";
+    document.getElementById("flash-banner").innerHTML = `<span class="flash-pill">⏱️ PINDAH KE LAJUR ${nextColIdx}...</span>`;
+
+    // Tunggu 1,2 detik sebelum membuka soal lajur baru dan menyalakan timer
+    setTimeout(() => {
+      if (!isTestRunning) return;
+      startColumn(nextColIdx);
+    }, CONFIG.transitionPauseMs);
   }
 
   function handleKeydown(e) {
+    if (isTransitioning) return; // Abaikan ketukan keyboard saat jeda pindah lajur
     if (e.key >= "0" && e.key <= "9") {
       handleInput(parseInt(e.key));
     }
   }
 
   function handleInput(val) {
-    if (current.col > CONFIG.totalCols) return;
+    // Tolak semua input selama masa jeda transisi lajur (1,2 detik)
+    if (isTransitioning || !isTestRunning || current.col > CONFIG.totalCols) return;
 
     const now = performance.now();
     const rt = Math.round(now - current.lastInputTime);
@@ -1158,6 +1215,7 @@
   // 5. PENYELESAIAN TES & PENGIRIMAN DATA
   function finishTest(forceDisqualify = false) {
     isTestRunning = false;
+    isTransitioning = false;
     window.removeEventListener("keydown", handleKeydown);
     if (timerInterval) clearInterval(timerInterval);
 
