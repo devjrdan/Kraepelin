@@ -1245,6 +1245,7 @@
     let slopeB = numerator / 520625;
     let hanker = parseFloat((50 * slopeB).toFixed(3));
 
+// Cari bagian const payload di dalam finishTest(), lalu ubah menjadi:
     const payload = {
       timestamp: new Date().toLocaleString("id-ID"),
       token: candidate.token,
@@ -1262,6 +1263,8 @@
       hanker: hanker,
       tianker: tianker,
       lajurCSV: totals.join(","),
+      benarCSV: corrects.join(","), // <-- TAMBAHAN: Urutan Benar per lajur (1-50)
+      salahCSV: errors.join(","),   // <-- TAMBAHAN: Urutan Salah per lajur (1-50)
       cheatStrikes: cheatStrikes,
       cheatReason: cheatLogReason || "Bersih"
     };
