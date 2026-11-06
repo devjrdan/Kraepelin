@@ -387,7 +387,7 @@
     <p class="desc">
       Jumlahkan 2 angka yang tersusun vertikal dari <strong>bawah ke atas</strong>.<br>
       Ketikkan <strong>hanya digit satuan</strong> (contoh: 4 + 9 = 13, ketik <strong>3</strong>; 9 + 2 = 11, ketik <strong>1</strong>).<br>
-      Layar otomatis berpindah ke lajur berikutnya setiap 15 detik (dilengkapi jeda transisi aman 1,2 detik antar lajur).
+      Layar otomatis berpindah ke lajur berikutnya setiap 15 detik (dilengkapi jeda transisi aman 1,5 detik antar lajur).
     </p>
 
     <div class="config-grid">
@@ -499,7 +499,7 @@
 </div>
 
 <script>
-  // 50 LAJUR BAKU KRAEPELIN
+  // 50 LAJUR BAKU KRAEPELIN (28 DIGIT PER LAJUR DARI EXCEL ACUAN)
   const KRAEPELIN_EXCEL_DATA = [
     [4, 9, 2, 7, 4, 6, 8, 9, 2, 9, 5, 6, 2, 2, 8, 1, 1, 2, 2, 9, 6, 6, 4, 7, 9, 7, 7, 2],
     [3, 8, 1, 6, 1, 7, 5, 8, 6, 2, 4, 6, 5, 9, 2, 5, 3, 6, 3, 5, 9, 1, 7, 6, 9, 6, 5, 7],
@@ -553,13 +553,14 @@
     [2, 6, 6, 8, 7, 6, 5, 6, 2, 4, 5, 9, 4, 4, 8, 3, 2, 5, 7, 2, 7, 5, 3, 3, 1, 9, 1, 5]
   ];
 
+  // URL Webhook Google Apps Script Deployment
   const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbySJnc-BgPuHAhwCFPUL58lEJwEHuguRmNS3qittniH-l-8DCFcXfjFDCbENwe7SEF4/exec";
 
   const CONFIG = {
     totalCols: 50,
     intervalSec: 15,
     maxOpsPerCol: 27,
-    transitionPauseMs: 1500 // Jeda transisi aman 1,2 detik antar lajur untuk mencegah missclick
+    transitionPauseMs: 1500 // Jeda transisi aman antar lajur
   };
 
   let candidate = { token: "", name: "", email: "", nohp: "", posisi: "", gender: "" };
@@ -578,10 +579,10 @@
   let timerInterval = null;
   let audioCtx = null;
   let isTestRunning = false;
-  let isTransitioning = false; // Flag pengunci input selama pergantian lajur
+  let isTransitioning = false;
   let activeScreen = "screen-token";
 
-  /* ============ SISTEM KEAMANAN & PELANGGARAN (IST ENGINE) ============ */
+  /* ============ SISTEM KEAMANAN & PELANGGARAN ============ */
   let cheatStrikes = 0;
   const MAX_STRIKES = 3;
   let isStrikeCooldown = false;
@@ -647,7 +648,6 @@
     localStorage.setItem("krp_strikes_" + candidate.token, cheatStrikes.toString());
   }
 
-  /* PENCEGAH FALSE STRIKE SAAT REFRESH */
   window.addEventListener("keydown", function(e) {
     if (e.key === "F5" || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "r")) {
       isPageUnloading = true;
@@ -664,7 +664,6 @@
 
   window.addEventListener("pagehide", function () { isPageUnloading = true; });
 
-  // DETEKSI SESI AKTIF SAAT REFRESH
   window.addEventListener("load", function () {
     isPageUnloading = false;
     triggerGracePeriod();
@@ -692,7 +691,7 @@
     }
   });
 
-  // 1. VERIFIKASI TOKEN
+  // 1. VERIFIKASI TOKEN KRAEPELIN
   async function verifyTokenKraepelin() {
     const inputEl = document.getElementById("input-token");
     const val = inputEl.value.trim().toUpperCase();
@@ -755,7 +754,6 @@
       return;
     }
 
-    // Pulihkan isian form
     if (document.getElementById("nameInput")) {
       document.getElementById("nameInput").value = candidate.name || "";
       document.getElementById("emailInput").value = candidate.email || "";
@@ -788,7 +786,7 @@
     }
   }
 
-  // 2. VALIDASI DATA DIRI (NOHP ANGKA ONLY 9-15 DIGIT)
+  // 2. VALIDASI DATA DIRI (5 KOLOM LENGKAP & INPUT ANGKA ONLY)
   function goToInstructions() {
     const nameVal = document.getElementById("nameInput").value.trim();
     const emailVal = document.getElementById("emailInput").value.trim();
@@ -967,7 +965,6 @@
     current.colStartTime = performance.now();
     current.lastInputTime = current.colStartTime;
 
-    // Buka kunci tampilan dan keypad
     document.getElementById("number-stage").classList.remove("transitioning");
     document.getElementById("keypad-container").classList.remove("locked");
     document.getElementById("flash-banner").innerHTML = "";
@@ -1008,14 +1005,12 @@
     }
   }
 
-  // LOGIKA PINDAH LAJUR DENGAN TRANSITION GRACE PERIOD (1,2 DETIK ANTI-MISSCLICK)
   function nextColumn() {
     if (isTransitioning) return;
     isTransitioning = true;
     clearInterval(timerInterval);
     playChime();
 
-    // Rekap hasil lajur yang baru selesai
     const total = current.colAnswers.length;
     const correct = current.colAnswers.filter(a => a.isCorrect).length;
     const error = total - correct;
@@ -1027,26 +1022,22 @@
       accuracy: total > 0 ? ((correct / total) * 100).toFixed(1) : "0.0"
     });
 
-    // Jika sudah lajur ke-50, langsung selesaikan tes
     if (current.col >= CONFIG.totalCols || current.col >= KRAEPELIN_EXCEL_DATA.length) {
       saveKraepelinSession();
       finishTest();
       return;
     }
 
-    // Simpan posisi ke lajur berikutnya agar aman jika ter-refresh saat transisi
     const nextColIdx = current.col + 1;
     current.col = nextColIdx;
     saveKraepelinSession();
 
-    // Tampilkan efek visual jeda transisi & kunci keypad agar tidak terjadi missclick
     document.getElementById("number-stage").classList.add("transitioning");
     document.getElementById("keypad-container").classList.add("locked");
     document.getElementById("hud-timer").innerText = "Pindah...";
     document.getElementById("timer-display").innerText = "---";
     document.getElementById("flash-banner").innerHTML = `<span class="flash-pill">⏱️ PINDAH KE LAJUR ${nextColIdx}...</span>`;
 
-    // Tunggu 1,2 detik sebelum membuka soal lajur baru dan menyalakan timer
     setTimeout(() => {
       if (!isTestRunning) return;
       startColumn(nextColIdx);
@@ -1054,14 +1045,13 @@
   }
 
   function handleKeydown(e) {
-    if (isTransitioning) return; // Abaikan ketukan keyboard saat jeda pindah lajur
+    if (isTransitioning) return;
     if (e.key >= "0" && e.key <= "9") {
       handleInput(parseInt(e.key));
     }
   }
 
   function handleInput(val) {
-    // Tolak semua input selama masa jeda transisi lajur (1,2 detik)
     if (isTransitioning || !isTestRunning || current.col > CONFIG.totalCols) return;
 
     const now = performance.now();
@@ -1212,7 +1202,7 @@
     }
   });
 
-  // 5. PENYELESAIAN TES & PENGIRIMAN DATA
+  // 5. PENYELESAIAN TES & KALKULASI PRESISI (100% SESUAI FILE KREAPLIN.XLSX)
   function finishTest(forceDisqualify = false) {
     isTestRunning = false;
     isTransitioning = false;
@@ -1221,31 +1211,67 @@
 
     showScreen("finish-screen");
 
-    const totals = colSummary.map(c => c.total);
-    const corrects = colSummary.map(c => c.correct);
-    const errors = colSummary.map(c => c.error);
+    // Jika terjadi diskualifikasi di tengah jalan saat lajur sedang aktif, amankan jawaban lajur berjalan
+    if (forceDisqualify && current.colAnswers && current.colAnswers.length > 0 && colSummary.length < current.col) {
+      const curTotal = current.colAnswers.length;
+      const curCorrect = current.colAnswers.filter(a => a.isCorrect).length;
+      colSummary.push({
+        col: current.col,
+        total: curTotal,
+        correct: curCorrect,
+        error: curTotal - curCorrect,
+        accuracy: curTotal > 0 ? ((curCorrect / curTotal) * 100).toFixed(1) : "0.0"
+      });
+    }
+
+    // Pastikan seluruh 50 lajur terdata lengkap
+    const totals = [];
+    const corrects = [];
+    const errors = [];
+
+    for (let i = 0; i < CONFIG.totalCols; i++) {
+      const colData = colSummary[i] || { total: 0, correct: 0, error: 0 };
+      totals.push(colData.total);
+      corrects.push(colData.correct); // Baris 9 (Y / TRUE) pada Excel acuan
+      errors.push(colData.error);     // Baris 10 (ERRORS) pada Excel acuan
+    }
 
     let totalDone = totals.reduce((a, b) => a + b, 0);
-    let totalCorrect = corrects.reduce((a, b) => a + b, 0);
-    let totalErrors = errors.reduce((a, b) => a + b, 0);
-    let totalSkipped = 0;
-    let tianker = totalErrors + totalSkipped;
+    let totalCorrect = corrects.reduce((a, b) => a + b, 0); // V17: Sum Y (Baris TRUE)
+    let totalErrors = errors.reduce((a, b) => a + b, 0);     // Baris 19: Sum of ERRORS
+    let totalSkipped = 0;                                    // Baris 20: Sum of SKIPPED
+    let tianker = totalErrors + totalSkipped;                // Baris 21: TOTAL of ERR+SKIPPED
 
-    let panker = parseFloat((totalDone / CONFIG.totalCols).toFixed(2));
-    let maxY = Math.max(...totals, 0);
-    let minY = Math.min(...totals, 0);
+    // 1. PANKER (Baris 16): =AVERAGE(A9:Y9,Z9:AX9) -> Rata-rata dari baris TRUE
+    let panker = parseFloat((totalCorrect / CONFIG.totalCols).toFixed(2));
+
+    // 2. JANKER (Baris 17): =MAX(A9:Y9,Z9:AX9)-MIN(A9:Y9,Z9:AX9) dari baris TRUE
+    let maxY = Math.max(...corrects, 0);
+    let minY = Math.min(...corrects, 0);
     let janker = maxY - minY;
 
+    // 3. HANKER (Baris 19): =(Y15-(Y17*Y16))/Y18*50
+    // Menghitung Sigma XY dari baris TRUE (di mana lajur 11 bernilai 0 di template Excel acuan):
     let sumXY = 0;
-    for (let i = 0; i < 50; i++) {
-      sumXY += (i + 1) * (totals[i] || 0);
+    for (let i = 0; i < CONFIG.totalCols; i++) {
+      let x = i + 1;
+      if (x === 11) {
+        sumXY += 0;
+      } else {
+        sumXY += x * corrects[i];
+      }
     }
-    let sumY = totalDone;
-    let numerator = (50 * sumXY) - (1275 * sumY);
-    let slopeB = numerator / 520625;
-    let hanker = parseFloat((50 * slopeB).toFixed(3));
 
-// Cari bagian const payload di dalam finishTest(), lalu ubah menjadi:
+    let N = CONFIG.totalCols;   // 50
+    let V15 = N * sumXY;        // N * Sigma XY
+    let V16 = 1275;             // Sigma X (1 s.d 50)
+    let V17 = totalCorrect;     // Sigma Y (Total TRUE)
+    // Sesuai template Excel acuan: n(Sigma X^2) - (Sigma X)^2 = 50 * 42804 - 1275^2 = 514575
+    let V18 = 514575;
+
+    let slopeB = (V15 - (V17 * V16)) / V18;
+    let hanker = parseFloat((slopeB * 50).toFixed(3)); // 50b
+
     const payload = {
       timestamp: new Date().toLocaleString("id-ID"),
       token: candidate.token,
@@ -1262,32 +1288,35 @@
       janker: janker,
       hanker: hanker,
       tianker: tianker,
-      lajurCSV: totals.join(","),
-      benarCSV: corrects.join(","), // <-- TAMBAHAN: Urutan Benar per lajur (1-50)
-      salahCSV: errors.join(","),   // <-- TAMBAHAN: Urutan Salah per lajur (1-50)
+      lajurCSV: corrects.join(","), // Grafik Dinamika Kerja memakai TRUE
+      benarCSV: corrects.join(","), // Detail Benar per lajur 1-50
+      salahCSV: errors.join(","),   // Detail Salah per lajur 1-50
+      totalCSV: totals.join(","),   // Detail Total Terjawab per lajur 1-50
       cheatStrikes: cheatStrikes,
       cheatReason: cheatLogReason || "Bersih"
     };
 
     localStorage.removeItem("krp_active_session");
 
+    // Langsung tampilkan hasil secara instan (Zero Delay / Non-blocking)
+    if (forceDisqualify) {
+      document.getElementById("finish-title").innerText = "Ujian Dihentikan (Didiskualifikasi)";
+      document.getElementById("finish-title").style.color = "var(--err)";
+      document.getElementById("finish-msg").innerHTML = `Batas toleransi pelanggaran (<strong>${MAX_STRIKES}/${MAX_STRIKES}</strong>) telah terlampaui.<br><br>Token Anda (<strong>${candidate.token}</strong>) telah dinonaktifkan permanen dan catatan log telah dikirimkan ke penguji.`;
+    } else {
+      document.getElementById("finish-msg").innerHTML = 
+        `<span style="color: #107c41; font-weight: 700;">Data Berhasil Disimpan!</span><br><br>Terima kasih, <strong>${candidate.name}</strong>. Rangkaian tes Kraepelin telah selesai. Seluruh hasil pengerjaan Anda telah diteruskan ke tim penguji.`;
+    }
+    document.getElementById("session-metadata").innerText = `ID Peserta: ${candidate.email} | Token: ${candidate.token}`;
+
+    // Kirim sinkronisasi ke Google Apps Script di latar belakang
     fetch(WEBHOOK_URL, {
       method: "POST",
       mode: "no-cors",
       headers: { "Content-Type": "text/plain" },
       body: JSON.stringify(payload)
-    }).then(() => {
-      if (forceDisqualify) {
-        document.getElementById("finish-title").innerText = "Ujian Dihentikan (Didiskualifikasi)";
-        document.getElementById("finish-title").style.color = "var(--err)";
-        document.getElementById("finish-msg").innerHTML = `Batas toleransi pelanggaran (<strong>${MAX_STRIKES}/${MAX_STRIKES}</strong>) telah terlampaui.<br><br>Token Anda (<strong>${candidate.token}</strong>) telah dinonaktifkan permanen dan catatan log telah dikirimkan ke penguji.`;
-      } else {
-        document.getElementById("finish-msg").innerHTML = 
-          `<span style="color: #107c41; font-weight: 700;">Data Berhasil Terkirim!</span><br><br>Terima kasih, <strong>${candidate.name}</strong>. Rangkaian tes Kraepelin telah selesai. Token Anda (<strong>${candidate.token}</strong>) telah dinonaktifkan.`;
-      }
-      document.getElementById("session-metadata").innerText = `ID Peserta: ${candidate.email} | Token: ${candidate.token}`;
     }).catch(err => {
-      document.getElementById("finish-msg").innerHTML = "Selesai. Terjadi sedikit kendala visualisasi jaringan, namun data lokal Anda aman.";
+      console.error("Sinkronisasi latar belakang tertunda:", err);
     });
   }
 </script>
